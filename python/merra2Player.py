@@ -1,13 +1,13 @@
 import os
-import urllib2
+import urllib
 import datetime
 import dateutil.rrule as rr
 import dateutil.parser as dparser
-import netCDF4
+#import netCDF4 # TODO figure out how to make netCDF work
 import subprocess
 from pylab import *
 import glob
-import cookielib
+import http.cookiejar as cookielib
 import traceback
 import time
 import base64
@@ -120,9 +120,9 @@ class merra2Player():
                 site['lon'] = -66.47817 
                 site['alt'] =  4870    
             else:
-                print "Only the following default sites are defined for the moment:",
-                print "SouthPole, ChajnantorPlateau, ChajnantorCerro, MaunaKea, Summit"
-                print "Use default site above or define site dict with keys:'type: custom, name, sname, lat, long, alt'"
+                print("Only the following default sites are defined for the moment:",)
+                print("SouthPole, ChajnantorPlateau, ChajnantorCerro, MaunaKea, Summit")
+                print("Use default site above or define site dict with keys:'type: custom, name, sname, lat, long, alt'")
                 raise ValueError('siteName error')
                 
         elif site['type'] =='custom':
@@ -132,12 +132,12 @@ class merra2Player():
                 if k in site.keys():
                     pass
                 else:
-                    print "%s key missing in input custom site dictionary"%k
+                    print("%s key missing in input custom site dictionary"%k)
                     raise ValueError('siteName error') 
                
         if 'gndData' not in site.keys():
             site['gndData']= 2
-        if 'cldtype' not in site.keys():
+        if 'cldtype' not in site.keys(): # TODO we probably want to look at cldtype to get the ice information out
             site['cldtype'] = 'vapor'
 
         self.site = site
@@ -175,7 +175,7 @@ class merra2Player():
         for date in dateList:
             amcFileList = self.checkAmcFileForDate(date)
             if size(amcFileList) != 0:
-                print "Found %d amc input profiles for %s. Not regenerating ... " %(size(amcFileList),date)
+                print("Found %d amc input profiles for %s. Not regenerating ... " %(size(amcFileList),date))
             else:
                 profile = self.createProfile(date.strftime('%Y%m%d'), plotFig=False)
                 amcFileList = self.profile2am(profile)
@@ -229,7 +229,7 @@ class merra2Player():
             tsky_merra['tau'] = tipperData[7]
             tsky_merra['Tatm'] = tipperData[9]
         except:
-            print "runTipper exception"
+            print("runTipper exception")
             # if there is no tipper data.
             keys = ['t_tipper','averaged_Tsky_tipper','Tsky_sigma','Tsky_tipper','tau','Tatm','tipper850_interp','tipper_unc']
             for k in keys:
@@ -244,7 +244,7 @@ class merra2Player():
         input: a start and end date of format 'YYYYMMDD'
         output: raw tipper time and tipper data
         """
-        print "Reading tipper data ..."
+        print("Reading tipper data ...")
         #conv = {4: lambda s: epoch+datetime.timedelt(days=s)}
 
         #get a list of all the months for which we want tipper data
@@ -269,7 +269,7 @@ class merra2Player():
         tipperData = np.transpose(tipperData)
         
         #create datetime
-        epoch = datetime.datetime(1995,01,01, 0, 0, 0)
+        epoch = datetime.datetime(1995, 1, 1, 0, 0, 0)
         for f in tipperData[4,:]:
             tipperTime.append(epoch+datetime.timedelta(days=f))
         tipperTime = array(tipperTime)
@@ -290,7 +290,7 @@ class merra2Player():
         given tau, tatm, Window Tx  theta, and stdev on each.
         input can be single values or arrays. outputs will be in the same format.
         """
-        print "Calculating tipper Tsky and Tsky_error"
+        print("Calculating tipper Tsky and Tsky_error")
         tsky = (tatm/theta) * (1-exp(-tau))
 
         dtatm = (1-exp(-tau))/theta*sigma_tatm
@@ -363,7 +363,7 @@ class merra2Player():
                 try:
                     closest = closest[0]
                 except:
-                    print value
+                    print(value)
                     tipper_m.append(float("nan"))
                     tipper_s.append(float("nan"))
                     continue
@@ -453,10 +453,10 @@ class merra2Player():
 
         filename = 'met_spo_insitu_1_obop_minute_%s_%s.txt'%(year,month)
         if os.path.exists(self.wxDir+filename):
-            print self.wxDir+filename+" already exists, skipping... "
+            print(self.wxDir+filename+" already exists, skipping... ")
             return 1
         url = "ftp://aftp.cmdl.noaa.gov/data/meteorology/in-situ/spo/%s/met_spo_insitu_1_obop_minute_%s_%s.txt"%(year,year,month)
-        print "Downloading data from %s"%url
+        print("Downloading data from %s"%url)
         try:
             f = urllib2.urlopen(url)
             data = f.read()
@@ -477,12 +477,12 @@ class merra2Player():
 
         """
         dat=datetime.datetime.strptime('%s %s'%(date,time),'%Y%m%d %H%M%S')
-        print dat
+        print(dat)
         year = date[0:4]
         month = date[4:6]
         wxFile = 'met_spo_insitu_1_obop_minute_%s_%s.txt'%(year,month)
 
-        if verbose: print "Reading %s"%wxFile
+        if verbose: print("Reading %s"%wxFile)
         d = genfromtxt(self.wxDir+wxFile,delimiter='',dtype='S,i,i,i,i,i,i,f,i,f,f,f,f,f,f')
         dt = array([datetime.datetime(t[1],t[2],t[3],t[4],t[5]) for t in d])
         wx ={'time': dt, 'presmB':d['f9'],'tempC': d['f11'],'rh':d['f13'],'wsms':d['f7'],'wddeg':d['f6']}
@@ -516,7 +516,7 @@ class merra2Player():
         """
 
         if not(os.path.exists(self.wxDir)) or  not(os.path.exists(self.wxDir+filename)):
-            print "WARNING: Keck/B2 Wx data not available, assigning default pressure..."
+            print("WARNING: Keck/B2 Wx data not available, assigning default pressure...")
             if self.site['name'] == 'SouthPole':
                 return {'presmB':[680]}
 
@@ -528,10 +528,10 @@ class merra2Player():
             wxFile = glob.glob('*%s_%s*'%(date,time))[0]
             os.chdir(cwd)
         else:
-            print "specify either filename to be read or date/time strings"
+            print("specify either filename to be read or date/time strings")
             return
 
-        if verbose: print "Reading %s"%wxFile
+        if verbose: print("Reading %s"%wxFile)
         wx = genfromtxt(self.wxDir+wxFile, delimiter='',names=True, invalid_raise = False)
 
         return wx
@@ -545,12 +545,12 @@ class merra2Player():
         dateList = list(rr.rrule(rr.MONTHLY,start, count=12))
 
         for month in dateList:
-            print month
+            print(month)
             cwd = os.getcwd()
             os.chdir(self.wxDir)
             dat = month.strftime('%Y%m')+'*'
             files = glob.glob('%s_wx_B2.txt'%dat)
-            print size(files)
+            print(size(files))
             os.chdir(cwd)
             mwx = []
             for f in files:
@@ -558,7 +558,7 @@ class merra2Player():
                 mwx.append(mean(wx['presmB']))
             clf()
             plot(mwx)
-            print dat, mean(mwx), std(mwx)
+            print(dat, mean(mwx), std(mwx))
             raw_input()
 
     def closestPoints(self, lat, lon):
@@ -659,21 +659,21 @@ class merra2Player():
         if data is saved and present, returns 1
         if data is not present returns 0
         """
-        print "Retrieving data for %s, %s "%(date, dataset)
+        print("Retrieving data for %s, %s "%(date, dataset))
         url, filename = self.get_url_for_date(date, dataset)
         if os.path.exists(self.merraDir+filename):
             if os.stat(self.merraDir+filename).st_size < 10000 :
-                print self.merraDir+filename+"  was corrupted at download, re-download ... "
+                print(self.merraDir+filename+"  was corrupted at download, re-download ... ")
             else:
-                print self.merraDir+filename+"  already exists, skipping...  "
+                print(self.merraDir+filename+"  already exists, skipping...  ")
                 return 1
     
         try:
-            if self.verbose: print "downloading MERRA2 URL: \n %s"%url
+            if self.verbose: print("downloading MERRA2 URL: \n %s"%url)
             #https://docs.python.org/2/howto/urllib2.html#id6 documentation for urllib2 authorization
             #http://stackoverflow.com/questions/2407126/python-urllib2-basic-auth-problem for a fix
             # create a password manager
-            username = 'anwang16'
+            username = 'anwang16' #TODO change this, probably
             password = 'AstroCMB1'
             request = urllib2.Request(url)
             base64string = base64.b64encode('%s:%s' % (username, password))
@@ -685,13 +685,13 @@ class merra2Player():
 
             meta = furl.info()
             file_size = int(meta.getheaders("Content-Length")[0])
-            print "Downloading: %s Bytes: %s" % (filename, file_size)
+            print("Downloading: %s Bytes: %s" % (filename, file_size))
             with open(self.merraDir+filename,'wb') as output:
                 output.write(furl.read())
-            print "Saved file: %s"%(self.merraDir+filename)
+            print("Saved file: %s"%(self.merraDir+filename))
             return 1
         except Exception:
-            print 'generic exception: ' + traceback.format_exc()
+            print('generic exception: ' + traceback.format_exc())
             return 0
 
     def retrieve_merra2_data_for_dateRange(self, dateStart, dateEnd = None, dataset = "multiLevel"):
@@ -711,7 +711,7 @@ class merra2Player():
         dateList = list(rr.rrule(rr.DAILY,dstart, count= count))
 
         for dat in dateList:
-            if self.verbose: print dat
+            if self.verbose: print(dat)
             #quick patch for the problem of overloading MERRA2 servers with requests
             try:
                 ret0 = self.retrieve_merra2_data_for_date(dat.strftime('%Y%m%d'), dataset)
@@ -724,8 +724,8 @@ class merra2Player():
             if (ret0 == 0) or (ret1 == 0):
                 dateList.pop(-1)
 
-        print "Summary: Start: %s, End: %s : %d files available, last: %s"\
-            %(dateStart, dateEnd, size(dateList), dateList[-1])
+        print("Summary: Start: %s, End: %s : %d files available, last: %s"\
+            %(dateStart, dateEnd, size(dateList), dateList[-1]))
                 
         return dateList
         
@@ -739,7 +739,7 @@ class merra2Player():
                      3: Simply extrapolate the last 3 data points for the Temp, o3 and h20
         mixing ratio to the mean ground pressure. This sometimes causes negative h2o mixing ratio.
         """
-        print "Converting MERRA2 data into a profile ..."
+        print("Converting MERRA2 data into a profile ...")
 
         #setup the plot
         if (plotFig): figure(1,figsize=(10,10)); clf()
@@ -751,16 +751,16 @@ class merra2Player():
         url, merraFilename_s = self.get_url_for_date(date,'singleLevel')
 
         if os.path.exists(self.merraDir+merraFilename_m):
-            print "Reading raw multiLevel MERRA2 data from %s"%merraFilename_m,
+            print("Reading raw multiLevel MERRA2 data from %s"%merraFilename_m,)
             d = netCDF4.Dataset(self.merraDir+merraFilename_m)
-            print '... Done'
+            print('... Done')
         else:
             raise ValueError("Merra2 multiLevel data for %s is missing, retrieve it"%date)
         
         if os.path.exists(self.merraDir+merraFilename_s):
-            print "Reading raw singleLevel MERRA2 data from %s"%merraFilename_s,
+            print("Reading raw singleLevel MERRA2 data from %s"%merraFilename_s,)
             s = netCDF4.Dataset(self.merraDir+merraFilename_s)
-            print '... Done'
+            print('... Done')
         else:
             raise ValueError("Merra2 singleLevel data for %s is missing, retrieve it"%date)
         
@@ -856,9 +856,9 @@ class merra2Player():
                 Pgnd = mean(wx['presmB'])
                 Tgnd = mean(wx['tempC'])+273.15  # from C to K.
                 Rhgnd = mean(wx['rh'])
-                print "Mean Ground Pres: %3.2f mBar"%Pgnd
-                print "Mean Ground Temp: %3.2f K"%Tgnd
-                print "Mean Ground RH: %3.2f%%"%Rhgnd
+                print("Mean Ground Pres: %3.2f mBar"%Pgnd)
+                print("Mean Ground Temp: %3.2f K"%Tgnd)
+                print("Mean Ground RH: %3.2f%%"%Rhgnd)
 
                 last_layer[0]=Pgnd
                 Vmrgnd = self.calcVmr(Pgnd,Tgnd,Rhgnd)
@@ -920,7 +920,7 @@ class merra2Player():
                 #current just leave the cloud layers at 0 on the ground. potentially we'll want to change this.
 
             else:
-                print "ERROR: No height provided or no surface level data available"
+                print("ERROR: No height provided or no surface level data available")
                 return 0
             
             #print Pgnd, layers[ti,:,0]
@@ -1026,7 +1026,7 @@ class merra2Player():
         weights is the pressure diff within a layer
         """
 
-        print "Simplifying pressure down to Pbase = %s mB"%lastLayerPressure
+        print("Simplifying pressure down to Pbase = %s mB"%lastLayerPressure)
         l = profile['layers']
         nPressureLevels = l[0,:,0].size
         dp =[]
@@ -1055,7 +1055,7 @@ class merra2Player():
         and save it.
 
         """
-        print "Converting given profile into amc files ..."
+        print("Converting given profile into amc files ...")
 
         # define set parameters
         P_ground = 1000.0       # surface pressure [mbar]
@@ -1074,7 +1074,7 @@ class merra2Player():
             tstr = datetime.datetime.strftime(t,'%Y%m%d_%H%M%S')
             amcList.append('%s_%s_gndData%d_%s.amc'%(self.site['name'],tstr, profile['gndData'],profile['cldtype']))
             f = open(self.amcDir+amcList[-1],'w')
-            print "Saving amc file to:  %s"%(self.amcDir+amcList[-1])
+            print("Saving amc file to:  %s"%(self.amcDir+amcList[-1]))
 
             # print header
             f.write('? \n')
@@ -1099,7 +1099,7 @@ class merra2Player():
                 P = layer[0]
                 T = layer[1]
                 if P > P_ground:
-                    print "pressure greater than P_ground, skipping layer"
+                    print ("pressure greater than P_ground, skipping layer")
                     continue
                 if (P < P_stratopause):
                     layer_type = 'mesosphere'
@@ -1157,7 +1157,7 @@ class merra2Player():
                 os.remove(outfile)
                 amcfile = outfile.replace('.out','.amc')
                 os.remove(amcfile)
-        print size(failedSpectra)
+        print (size(failedSpectra))
         return failedSpectra
     
     def findMissingSpectra(self,year):
@@ -1169,10 +1169,11 @@ class merra2Player():
             datestr = date.strftime('%Y%m%d')
             nspecPerDay = size(glob.glob(self.amcDir+'*%s*gndData2*.out'%datestr))
             if nspecPerDay  != 8:
-                print '%s: only %d of 8 amc spectra in that day'%(datestr,nspecPerDay)
+                print ('%s: only %d of 8 amc spectra in that day'%(datestr,nspecPerDay))
                 missingSpectraDays.append(date)
 
-        print '%d days with missing spectra'%size(missingSpectraDays)   
+        print('%d days with missing spectra'%size(missingSpectraDays)  )
+ 
         return missingSpectraDays
      
     def findIceWater(self, year):
@@ -1185,7 +1186,7 @@ class merra2Player():
                 os.remove(amcfile)
                 outfn = amcfile.replace('.amc','.out')
                 os.remove(outfn)
-        print size(icewater)
+        print(size(icewater))
         return icewater
 
     def run_am(self, amcFileName, za=0., f0=50., f1=300., df=100, h2o_scale=1.0):
@@ -1234,7 +1235,7 @@ class merra2Player():
 
         if os.path.exists(self.amcDir+outfn):
             if os.path.getsize(self.amcDir+outfn) != 0:
-                print self.amcDir+outfn+" already exists, skip running drive_am on this... "
+                print (self.amcDir+outfn+" already exists, skip running drive_am on this... ")
                 return outfn, errfn
         ##TODO: Remove the hard-coded path (likely by creating an alias in the predict_tsky_web).
         #cmd = 'am %s%s '%(self.amcDir,infn)
@@ -1251,7 +1252,7 @@ class merra2Player():
 
         cmd +=  ' >%s%s '%(self.amcDir,outfn)
         cmd += ' 2>%s%s '%(self.amcDir,errfn)
-        if self.debug: print cmd
+        if self.debug: print (cmd)
 
         subprocess.Popen(cmd,shell=True).wait()
         return outfn, errfn
@@ -1286,7 +1287,7 @@ class merra2Player():
             amOut = genfromtxt(self.amcDir+outfn,delimiter='',names=outfmt)
             
         except:
-            print "ERROR: could not read file output spectra for %s"%outfn
+            print( "ERROR: could not read file output spectra for %s"%outfn)
 
         return  amOut, pwv, dry_air, o3, Tgnd, Pgnd
 
@@ -1344,7 +1345,7 @@ class merra2Player():
                 filename = 'K270_frequency_spectrum_20170710.txt'
                 cutoff=[200,340]
             else:
-                print "bandName must be 'BK95', 'BK150', 'BK210', 'BK220', or 'BK270'"
+                print("bandName must be 'BK95', 'BK150', 'BK210', 'BK220', or 'BK270'")
                 return 0
             e = genfromtxt(self.auxDataDir+filename, delimiter=',', comments='#')
             f = e[:,0]
@@ -1425,7 +1426,7 @@ class merra2Player():
                 ivalues += [find(items == val)[0]]
             return ivalues, values
         except:
-            print "failed to find nearest index of single date"
+            print("failed to find nearest index of single date")
             pass
 
     def printSingle(self, tstart, Tsky_merra):
@@ -1436,12 +1437,12 @@ class merra2Player():
         inear,t_merra_near = self.index_nearest(array(Tsky_merra['t']),dstart,2)
         i0 = inear[0]
         i1 = inear[1]
-        print "Requested Tsky at %s"%tstart
-        print 'MERRA2-derived Tsky for %s and %s'%(t_merra_near[0].isoformat(),t_merra_near[1].isoformat())
+        print("Requested Tsky at %s"%tstart)
+        print('MERRA2-derived Tsky for %s and %s'%(t_merra_near[0].isoformat(),t_merra_near[1].isoformat()))
         keys = ['BK100','BK150','BK210','BK220','BK270','tipper850','EHT_lo','EHT_hi'] 
-        print 'Band:%10s  PWV = %5.1f um,     PWV = %5.1f um  '%('PWV',Tsky_merra['pwv'][i0],Tsky_merra['pwv'][i1])
+        print('Band:%10s  PWV = %5.1f um,     PWV = %5.1f um  '%('PWV',Tsky_merra['pwv'][i0],Tsky_merra['pwv'][i1]))
         for key in keys:
-            print 'Band:%10s  Tsky= %5.1f K,     Tsky= %5.1f K  '%(key,Tsky_merra[key][inear[0]],Tsky_merra[key][inear[1]])
+            print('Band:%10s  Tsky= %5.1f K,     Tsky= %5.1f K  '%(key,Tsky_merra[key][inear[0]],Tsky_merra[key][inear[1]]))
     
 
     def save2pickle(self, Tsky_merra, opts):
@@ -1450,7 +1451,7 @@ class merra2Player():
         """
         import pickle
 
-        print "Saving results to pickle file..."
+        print("Saving results to pickle file...")
         now = opts['now']
         strnow = now.isoformat()
         bandopt =  opts['bandopt']
@@ -1469,7 +1470,7 @@ class merra2Player():
 
         pickleFile = 'Tsky_merra2_output_%s_%s.pickle'%(siteopt['name'],dateInfo)
 
-        print "Saving resuls to %s"%(self.webDir+pickleFile)
+        print("Saving resuls to %s"%(self.webDir+pickleFile))
         with open(self.webDir+pickleFile,'w') as f:
             pickle.dump([Tsky_merra,opts], f)
 
@@ -1480,7 +1481,7 @@ class merra2Player():
         function to save the results to a csv file
 
         """
-        print "Saving results to csv file..."
+        print("Saving results to csv file...")
         now = opts['now']
         strnow = now.isoformat()
         bandopt =  opts['bandopt']
@@ -1504,7 +1505,7 @@ class merra2Player():
 
         csvFile = 'Tsky_merra2_output_%s_%s.csv'%(siteopt['name'],dateInfo)
         
-        print "Saving resuls to %s"%(self.webDir+csvFile)
+        print("Saving resuls to %s"%(self.webDir+csvFile))
         with open(self.webDir+csvFile, 'w') as f:
             f.write('# Output from predict_Tsky.py generated on %s \n'%strnow)
             f.write('# Summary of user inputs \n')
@@ -1541,7 +1542,7 @@ class merra2Player():
         function to plot Tsky and PWV in two saved plots 
 
         """
-        print 'Plotting results...'
+        print('Plotting results...')
         ioff()
         now = opts['now']
         strnow = now.isoformat()
