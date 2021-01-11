@@ -57,7 +57,9 @@ if __name__ == '__main__':
     try:
         siteInitial = siteInitials[currentSite]
     except:
-        print("Invalid site. Choose among SouthPole, ChajnantorPlateau, ChajnantorCerro, and MaunaKea.")
+        print(
+            "Invalid site. Choose among SouthPole, ChajnantorPlateau, ChajnantorCerro, and MaunaKea."
+        )
         exit()
 
     tstart = options.start
