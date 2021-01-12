@@ -1,3 +1,4 @@
 merra2_products/*
 *__pycache__*
 *.pyc
+python/merra2_products
