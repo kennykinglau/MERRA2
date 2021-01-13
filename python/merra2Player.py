@@ -4,21 +4,19 @@ import datetime
 import dateutil.rrule as rr
 import dateutil.parser as dparser
 
-# import netCDF4 # TODO figure out how to make netCDF work
+import netCDF4
 import subprocess
 from pylab import *
 import glob
-import http.cookiejar as cookielib
+import http.cookiejar
 import traceback
 import time
 import base64
 from scipy import interpolate, stats, signal
 
-# WARNING
-# Needs to have activated a special environment
-# source activate mypyenv (which has scipy 0.18.1)
-# https://www.rc.fas.harvard.edu/resources/documentation/software-on-odyssey/python/
-# add some more warnings here.
+# The next user should update this.
+username = 'ngoecknerwald'
+password = 'BICEP2Keck'
 
 
 class merra2Player:
@@ -47,14 +45,14 @@ class merra2Player:
                 "WARNING: You must have a symlink which points to \"merra2_products\""
             )
             print(
-                "WARNING: ln -s /n/holylfs02/LABS/kovac_lab/keck/wvr_products/merra2_analysis merra2_products"
+                "WARNING: ln -s /n/holylfs04/LABS/kovac_lab/keck/wvr_products/merra2_analysis merra2_products"
             )
             print("Stopping")
             exit()
 
         if product == 'inst':
             folder = 'merra2_products'
-            self.webDir = '/n/holylfs02/LABS/kovac_lab/www/merra2_web/web_output_files/'
+            self.webDir = '/n/holylfs04/LABS/kovac_lab/www/merra2_web/web_output_files/'
         elif product == 'tavg':
             folder = 'merra2_products_averaged'
             self.webDir = 'merra2_products_averaged/web_output_files/'
@@ -81,9 +79,9 @@ class merra2Player:
             print("Stopping")
             exit()
 
-        self.webDir = '/n/holylfs02/LABS/kovac_lab/www/merra2_web/web_output_files/'
+        self.webDir = '/n/holylfs04/LABS/kovac_lab/www/merra2_web/web_output_files/'
         self.wxDir = '%s/wx_data/' % folder  # independent of holylfs directory
-        self.auxDataDir = '/n/holylfs02/LABS/kovac_lab/keck/keck_aux_data/bandpass/'
+        self.auxDataDir = '/n/holylfs04/LABS/kovac_lab/keck/keck_aux_data/bandpass/'
 
     def defineSite(self, site=None):
         """
@@ -800,19 +798,21 @@ class merra2Player:
                 print(self.merraDir + filename + "  already exists, skipping...  ")
                 return 1
 
+        print('TRYING TO DO DOWNLOAD OF')
+        print(url)
+        print(self.merraDir + filename)
+        exit()
+
         try:
             if self.verbose:
                 print("downloading MERRA2 URL: \n %s" % url)
-            # https://docs.python.org/2/howto/urllib2.html#id6 documentation for urllib2 authorization
-            # http://stackoverflow.com/questions/2407126/python-urllib2-basic-auth-problem for a fix
-            # create a password manager
-            username = 'anwang16'  # TODO change this, probably
-            password = 'AstroCMB1'
-            request = urllib2.Request(url)
+
+            # TODO note that this doesn't really seem to work at the moment
+            request = urllib.Request(url)
             base64string = base64.b64encode('%s:%s' % (username, password))
 
-            cj = cookielib.CookieJar()
-            opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cj))
+            cj = cookiejar.CookieJar()
+            opener = urllib.build_opener(urllib.HTTPCookieProcessor(cj))
             request.add_header("Authorization", "Basic %s" % base64string)
             furl = opener.open(request)
 
@@ -857,14 +857,16 @@ class merra2Player:
                     dat.strftime('%Y%m%d'), "singleLevel"
                 )
             except:
-                print("MERRA2 servers not responding... trying again in 10 seconds")
-                time.sleep(10)
-                ret0 = self.retrieve_merra2_data_for_date(
-                    dat.strftime('%Y%m%d'), dataset
-                )
-                ret1 = self.retrieve_merra2_data_for_date(
-                    dat.strftime('%Y%m%d'), "singleLevel"
-                )
+                print('Error download MERRA2 data. Exiting.')
+                exit()
+                #    print("MERRA2 servers not responding... trying again in 10 seconds")
+                #    time.sleep(10)
+                #    ret0 = self.retrieve_merra2_data_for_date(
+                #        dat.strftime('%Y%m%d'), dataset
+                #    )
+                #    ret1 = self.retrieve_merra2_data_for_date(
+                #        dat.strftime('%Y%m%d'), "singleLevel"
+                #    )
             if (ret0 == 0) or (ret1 == 0):
                 dateList.pop(-1)
 
@@ -1041,22 +1043,22 @@ class merra2Player:
                             / s.variables['TQI'][t - 2, ilat, ilon]
                         )
                 TInterp = interpolate.interp2d(
-                    zip(*interpList)[0], zip(*interpList)[1], dataPoints[0]
+                    list(zip(*interpList))[0], list(zip(*interpList))[1], dataPoints[0]
                 )
                 QVInterp = interpolate.interp2d(
-                    zip(*interpList)[0], zip(*interpList)[1], dataPoints[1]
+                    list(zip(*interpList))[0], list(zip(*interpList))[1], dataPoints[1]
                 )
                 O3Interp = interpolate.interp2d(
-                    zip(*interpList)[0], zip(*interpList)[1], dataPoints[2]
+                    list(zip(*interpList))[0], list(zip(*interpList))[1], dataPoints[2]
                 )
                 HInterp = interpolate.interp2d(
-                    zip(*interpList)[0], zip(*interpList)[1], dataPoints[3]
+                    list(zip(*interpList))[0], list(zip(*interpList))[1], dataPoints[3]
                 )
                 QLInterp = interpolate.interp2d(
-                    zip(*interpList)[0], zip(*interpList)[1], dataPoints[4]
+                    list(zip(*interpList))[0], list(zip(*interpList))[1], dataPoints[4]
                 )
                 QIInterp = interpolate.interp2d(
-                    zip(*interpList)[0], zip(*interpList)[1], dataPoints[5]
+                    list(zip(*interpList))[0], list(zip(*interpList))[1], dataPoints[5]
                 )
                 layers[t, l, 1] = TInterp(lat, lon)
                 qv = QVInterp(lat, lon)
@@ -1181,10 +1183,10 @@ class merra2Player:
                     )
                     dataPoints[1].append(qv(Pgnd))
                 TInterp = interpolate.interp2d(
-                    zip(*interpList)[0], zip(*interpList)[1], dataPoints[0]
+                    list(zip(*interpList))[0], list(zip(*interpList))[1], dataPoints[0]
                 )
                 QVInterp = interpolate.interp2d(
-                    zip(*interpList)[0], zip(*interpList)[1], dataPoints[1]
+                    list(zip(*interpList))[0], list(zip(*interpList))[1], dataPoints[1]
                 )
                 Tgnd = TInterp(lat, lon)
                 QVgnd = QVInterp(lat, lon)

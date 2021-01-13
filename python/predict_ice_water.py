@@ -8,15 +8,15 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
 
-    parser.add_option(
+    parser.add_argument(
         "-l",
         dest="location",
-        default='None',
+        default='SouthPole',
         type=str,
         help="-l. Comma-separated string to define site. Can be either -l [pre-selected site], -l NewSite,shortname,lat,lon,alt. Pre-selected sites are: SouthPole, ChajnantorPlateau, CerroChajnantor, MaunaKea, Summit, Qubic. Default: None",
     )
 
-    parser.add_option(
+    parser.add_argument(
         "-b",
         dest="bandpass",
         default="None",
@@ -24,15 +24,15 @@ if __name__ == '__main__':
         help="-b. Bandpass option. If you have a custom passband that can be modeled as a tophat, please input -b bandname, band_center(GHz), bandwidth(GHz). Default: None",
     )
 
-    parser.add_option(
+    parser.add_argument(
         "-d",
         dest="dateopt",
-        default="20150123",
+        default="20190420",
         type=str,
         help="-d. Can be either: 'start, end' or 'start', or 'year'.  Start and end can be either YYYYMMDD or \"YYYYMMDDTHH:MM:SS\". Year: YYYY. Default: 20160123",
     )
     # TODO: Detect when the daterange goes out of the range of MERRA2, and switch to using GFS.
-    parser.add_option(
+    parser.add_argument(
         "-p",
         dest="plotFig",
         action="store_true",
@@ -40,7 +40,7 @@ if __name__ == '__main__':
         help="-p option will plot a figure, default: False",
     )
 
-    parser.add_option(
+    parser.add_argument(
         "-g",
         dest="groundData",
         default=2,
@@ -48,7 +48,7 @@ if __name__ == '__main__':
         help="-g. Type of surface level data. 1: historical measured data when available. 2(default): MERRA2 surface data. 3: Extrapolation from MERRA2 3d data.",
     )
 
-    parser.add_option(
+    parser.add_argument(
         "-c",
         dest="cloud",
         action="store_true",
@@ -56,7 +56,7 @@ if __name__ == '__main__':
         help="-c. adds ice and liquid water layers in the am profile. Default (false) is for am profile to only contain water-vapor data.",
     )
 
-    parser.add_option(
+    parser.add_argument(
         "-s",
         dest="saveResults",
         action="store_false",
@@ -64,7 +64,7 @@ if __name__ == '__main__':
         help="-s. Default=True, Forces the output of a run to be saved in a csv and pickle file",
     )
 
-    (options, args) = parser.parse_args()
+    args = parser.parse_args()
 
     now = datetime.datetime.now()
     import merra2Player as m2p
@@ -76,7 +76,7 @@ if __name__ == '__main__':
     dateopt = {}
     siteopt = {}
 
-    bd = options.bandpass.split(',')
+    bd = args.bandpass.split(',')
     if len(bd) == 1:
         bandopt['name'] = bd[0]
     elif len(bd) == 3:
@@ -87,7 +87,7 @@ if __name__ == '__main__':
         print("ERROR in bandpass selection")
         exit()
 
-    st = options.location.split(',')
+    st = args.location.split(',')
     if len(st) == 1:
         siteopt['type'] = 'presel'
         siteopt['name'] = st[0]
@@ -102,13 +102,13 @@ if __name__ == '__main__':
         print("ERROR in site selection")
         exit()
 
-    if options.cloud == False:
+    if args.cloud == False:
         siteopt['cldtype'] = 'vapor'
     else:
         siteopt['cldtype'] = 'icewater'
-    siteopt['groundData'] = options.groundData
+    siteopt['groundData'] = args.groundData
 
-    dt = options.dateopt.split(',')
+    dt = args.dateopt.split(',')
     if len(dt) == 1:
         if len(dt[0]) == 4:
             dateopt['type'] = 'datelist'
@@ -130,12 +130,17 @@ if __name__ == '__main__':
         exit()
 
     # site has to be defined first as self.site is used throughout the class
-    sitopt = m.defineSite(site=siteopt)
+    siteopt = m.defineSite(site=siteopt)
     print(dateopt, siteopt, bandopt)
     # Links and directory names have to be defined first as they are used throughout
     m.checkLinks()
 
-    # Tsky_merra = m.runMERRA(dateopt=dateopt, bandopt=bandopt)
+    Tsky_merra = m.runMERRA(dateopt=dateopt, bandopt=bandopt)
+
+    print(Tsky_merra)
+
+    exit()
+
     # if siteopt['type'] == 'presel':
     #    Tsky_merra = m.runTipper(Tsky_merra, dateopt)
 
