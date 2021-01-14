@@ -798,34 +798,34 @@ class merra2Player:
                 print(self.merraDir + filename + "  already exists, skipping...  ")
                 return 1
 
-        print('TRYING TO DO DOWNLOAD OF')
-        print(url)
-        print(self.merraDir + filename)
-        exit()
+        print('Trying to download %s' % url)
+        print('And save the data to %s' % (self.merraDir + filename))
 
-        try:
-            if self.verbose:
-                print("downloading MERRA2 URL: \n %s" % url)
+        return 0
 
-            # TODO note that this doesn't really seem to work at the moment
-            request = urllib.Request(url)
-            base64string = base64.b64encode('%s:%s' % (username, password))
+        # try:
+        #    if self.verbose:
+        #        print("downloading MERRA2 URL: \n %s" % url)
 
-            cj = cookiejar.CookieJar()
-            opener = urllib.build_opener(urllib.HTTPCookieProcessor(cj))
-            request.add_header("Authorization", "Basic %s" % base64string)
-            furl = opener.open(request)
+        #    # TODO note that this doesn't really seem to work at the moment
+        #    request = urllib.request.urlopen(url)
+        #    base64string = base64.b64encode('%s:%s' % (username, password))
 
-            meta = furl.info()
-            file_size = int(meta.getheaders("Content-Length")[0])
-            print("Downloading: %s Bytes: %s" % (filename, file_size))
-            with open(self.merraDir + filename, 'wb') as output:
-                output.write(furl.read())
-            print("Saved file: %s" % (self.merraDir + filename))
-            return 1
-        except Exception:
-            print('generic exception: ' + traceback.format_exc())
-            return 0
+        #    cj = cookiejar.CookieJar()
+        #    opener = urllib.build_opener(urllib.HTTPCookieProcessor(cj))
+        #    request.add_header("Authorization", "Basic %s" % base64string)
+        #    furl = opener.open(request)
+
+        #    meta = furl.info()
+        #    file_size = int(meta.getheaders("Content-Length")[0])
+        #    print("Downloading: %s Bytes: %s" % (filename, file_size))
+        #    with open(self.merraDir + filename, 'wb') as output:
+        #        output.write(furl.read())
+        #    print("Saved file: %s" % (self.merraDir + filename))
+        #    return 1
+        # except Exception:
+        #    print('generic exception: ' + traceback.format_exc())
+        #    #raise
 
     def retrieve_merra2_data_for_dateRange(
         self, dateStart, dateEnd=None, dataset="multiLevel"
