@@ -5,7 +5,8 @@ import datetime
 import os
 import merra2Player as m2p
 import netCDF4
-
+import numpy as np
+import pickle
 
 if __name__ == '__main__':
 
@@ -19,7 +20,7 @@ if __name__ == '__main__':
 
     parser.add_argument(
         "--date",
-        default=["20190101", "20201130"],
+        default=["20190101", "20201129"],
         nargs=2,
         help="Date range in the format YYYYMMDD, YYYYMMDD",
     )
@@ -76,11 +77,20 @@ if __name__ == '__main__':
     # Now let's load the MERRA2 data for the correct date range
     datelist = m.retrieve_merra2_data_for_dateRange(dateopt['start'], dateopt['end'])
 
-    exit()
-
+    # Here is where we will store the timestreams
     merradata = {}
 
-    for date in datelist:
+    # merradata['QI'] = np.zeros((8 * len(datelist), 42, 3, 3), dtype=float)
+    for key in ['TQI', 'TQL', 'TQV']:
+        merradata[key] = np.zeros((24 * len(datelist), 3, 3), dtype=float)
+
+    merradata['start'] = dateopt['start']
+    merradata['end'] = dateopt['end']
+
+    # Let's chuck all of this into a dictionary
+    for i, date in enumerate(datelist):
+
+        print(date)
 
         # Let's load the netDCF4 filenames
         url, merraFilename_m = m.get_url_for_date(date.strftime('%Y%m%d'), 'multiLevel')
@@ -89,56 +99,19 @@ if __name__ == '__main__':
         )
         del url
 
-        print(merraFilename_m)
-        print(merraFilename_s)
-
+        # Let's load in the CDF4 data
         data_s = netCDF4.Dataset(os.path.join(m.merraDir, merraFilename_s))
         data_m = netCDF4.Dataset(os.path.join(m.merraDir, merraFilename_m))
-
-        print(data_s)
-        print(data_m)
-
         print(data_s.variables.keys())
+        print(data_m.variables.keys())
 
-        # This seems to be the right number to pull from the MERRA2 data
-        print(data_s.variables['TQI'][:, 1, 1])
+        # Stick it in the TODs
+        # merradata['QI'][i * 8 : (i + 1) * 8, :, :] = np.array(data_m.variables['QI'])
+        for key in ['TQI', 'TQL', 'TQV']:
+            merradata[key][i * 24 : (i + 1) * 24, :, :] = np.array(
+                data_s.variables[key]
+            )
 
-        exit()
-
-    # Tsky_merra = m.runMERRA(dateopt=dateopt, bandopt=bandopt)
-    exit()
-
-    # if siteopt['type'] == 'presel':
-    #    Tsky_merra = m.runTipper(Tsky_merra, dateopt)
-
-    # opts = {}
-    # opts['web'] = False
-    # opts['now'] = now
-    # opts['bandopt'] = bandopt
-    # opts['siteopt'] = siteopt
-    # opts['dateopt'] = dateopt
-
-    # if dateopt['single']:
-    #    m.printSingle(dateopt['start'], Tsky_merra)
-    # else:
-    #    if options.saveResults:
-    #        csvFile = m.save2csv(Tsky_merra, opts)
-    #        pickleFile = m.save2pickle(Tsky_merra, opts)
-    #    else:
-    #        print("Results not saved to any file")
-
-    # if options.plotFig:
-    #    tskyPlot = m.save2plot(Tsky_merra, opts)
-    #    os.system('eog %s' % tskyPlot)
-
-    # print(
-    #    "Total time: %.2f seconds" % ((datetime.datetime.now() - now).total_seconds())
-    # )
-
-    # TODO add unit tests
-    # predict_Tsky.py -l SouthPole -d 20170801
-    # predict_Tsky.py -l SouthPole -d 20170801, 20170804
-    # predict_Tsky.py -l SouthPole -d 2017
-    # predict_Tsky.py -l SouthPole -d 20170501 04:05:06
-
-    # predict_Tsky.py -d 20170801 04:05:06 -l "SMT, smt, 32.7016, -109.891, 3185"
+    # Now save it out
+    with open('merra2_timestream.pkl', 'wb') as handle:
+        pickle.dump(merradata, handle, protocol=pickle.HIGHEST_PROTOCOL)
