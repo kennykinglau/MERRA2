@@ -14,10 +14,6 @@ import time
 import base64
 from scipy import interpolate, stats, signal
 
-# The next user should update this.
-username = 'ngoecknerwald'
-password = 'BICEP2Keck'
-
 
 class merra2Player:
     """
@@ -801,13 +797,13 @@ class merra2Player:
         print('Trying to download %s' % url)
         print('And save the data to %s' % (self.merraDir + filename))
 
-        return 0
+        raise FileNotFoundError
 
+        # TODO note that this doesn't really seem to work at the moment
         # try:
         #    if self.verbose:
         #        print("downloading MERRA2 URL: \n %s" % url)
 
-        #    # TODO note that this doesn't really seem to work at the moment
         #    request = urllib.request.urlopen(url)
         #    base64string = base64.b64encode('%s:%s' % (username, password))
 
@@ -849,24 +845,20 @@ class merra2Player:
             if self.verbose:
                 print(dat)
             # quick patch for the problem of overloading MERRA2 servers with requests
-            try:
-                ret0 = self.retrieve_merra2_data_for_date(
-                    dat.strftime('%Y%m%d'), dataset
-                )
-                ret1 = self.retrieve_merra2_data_for_date(
-                    dat.strftime('%Y%m%d'), "singleLevel"
-                )
-            except:
-                print('Error download MERRA2 data. Exiting.')
-                exit()
-                #    print("MERRA2 servers not responding... trying again in 10 seconds")
-                #    time.sleep(10)
-                #    ret0 = self.retrieve_merra2_data_for_date(
-                #        dat.strftime('%Y%m%d'), dataset
-                #    )
-                #    ret1 = self.retrieve_merra2_data_for_date(
-                #        dat.strftime('%Y%m%d'), "singleLevel"
-                #    )
+            # try:
+            ret0 = self.retrieve_merra2_data_for_date(dat.strftime('%Y%m%d'), dataset)
+            ret1 = self.retrieve_merra2_data_for_date(
+                dat.strftime('%Y%m%d'), "singleLevel"
+            )
+            # except:
+            #    print("MERRA2 servers not responding... trying again in 10 seconds")
+            #    time.sleep(10)
+            #    ret0 = self.retrieve_merra2_data_for_date(
+            #        dat.strftime('%Y%m%d'), dataset
+            #    )
+            #    ret1 = self.retrieve_merra2_data_for_date(
+            #        dat.strftime('%Y%m%d'), "singleLevel"
+            #    )
             if (ret0 == 0) or (ret1 == 0):
                 dateList.pop(-1)
 
