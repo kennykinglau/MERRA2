@@ -2,3 +2,4 @@ merra2_products/*
 *__pycache__*
 *.pyc
 python/merra2_products
+python/merra2_timestream.pkl
