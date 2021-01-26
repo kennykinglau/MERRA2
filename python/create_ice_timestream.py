@@ -8,6 +8,9 @@ import netCDF4
 import numpy as np
 import pickle
 
+keys_1d = ['TQI', 'TQL', 'TQV', 'TROPQ', 'TROPT']
+keys_3d = ['H', 'T', 'U', 'V', 'QI', 'QL', 'INCLOUDQI', 'CLOUD', 'TAUCLI', 'TAUCLW']
+
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
@@ -80,8 +83,11 @@ if __name__ == '__main__':
     # Here is where we will store the timestreams
     merradata = {}
 
-    # merradata['QI'] = np.zeros((8 * len(datelist), 42, 3, 3), dtype=float)
-    for key in ['TQI', 'TQL', 'TQV']:
+    # Altitude-indexed dimensions
+    for key in keys_3d:
+        merradata[key] = np.zeros((8 * len(datelist), 42, 3, 3), dtype=float)
+    # Z-collapsed dimensions
+    for key in keys_1d:
         merradata[key] = np.zeros((24 * len(datelist), 3, 3), dtype=float)
 
     merradata['start'] = dateopt['start']
@@ -102,12 +108,30 @@ if __name__ == '__main__':
         # Let's load in the CDF4 data
         data_s = netCDF4.Dataset(os.path.join(m.merraDir, merraFilename_s))
         data_m = netCDF4.Dataset(os.path.join(m.merraDir, merraFilename_m))
-        print(data_s.variables.keys())
-        print(data_m.variables.keys())
+        data_c = netCDF4.Dataset(
+            os.path.join(
+                m.merraDir,
+                merraFilename_m.replace('inst3_3d_asm_Np', 'tavg3_3d_cld_Np'),
+            )
+        )
+
+        # print(np.array(data_m.variables['H'])[0,:,1,1])
+        # print(data_s.variables.keys())
+        # print(data_m.variables.keys())
+        # print(data_c.variables.keys())
 
         # Stick it in the TODs
-        # merradata['QI'][i * 8 : (i + 1) * 8, :, :] = np.array(data_m.variables['QI'])
-        for key in ['TQI', 'TQL', 'TQV']:
+        for key in keys_3d:
+            try:
+                merradata[key][i * 8 : (i + 1) * 8, :, :] = np.array(
+                    data_m.variables[key]
+                )
+            except KeyError:
+                merradata[key][i * 8 : (i + 1) * 8, :, :] = np.array(
+                    data_c.variables[key]
+                )
+
+        for key in keys_1d:
             merradata[key][i * 24 : (i + 1) * 24, :, :] = np.array(
                 data_s.variables[key]
             )
