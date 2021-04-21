@@ -79,6 +79,8 @@ conversionRatio = np.sqrt(2)*circleRadius/sideLength #meters per pixel of the Ca
 
 merra2_in_Cartesian = np.zeros((numOfLats,numOfLons,2)) #At each latitude, longitude point it gives the x,y coordinates
 #TODO: is there a more efficient way to do this using numpy arrays?
+
+# Note from Neil: Yes. See my code in do_projection.py 
 for lat in range(numOfLats):
 	for lon in range(numOfLons):
 		x,y = convert2Cartesian(-90+LAT_RES*lat,-180+LON_RES*lon)
@@ -132,6 +134,9 @@ for date in dates:
 			ice_array = data_merra[param][t][elevation][:][:]
 		else:
 			ice_array = data_merra[param][t][:][:]
+
+        # Neil: If you have an array you should just use np.max()
+
 		for i in range(sideLength):
 			for j in range(sideLength):
 				lat = int(round(cartesianGrid[i][j][0]))
