@@ -711,9 +711,9 @@ class merra2Player:
         Returns  the  hostname from which to retrieve the MERRA2 data
         """
         if dataset == 'multiLevel':
-            hostname = 'http://goldsmr5.gesdisc.eosdis.nasa.gov/daac-bin/OTF/HTTP_services.cgi?'
+            hostname = 'http://goldsmr5.gesdisc.eosdis.nasa.gov/'
         elif dataset == 'singleLevel':
-            hostname = 'http://goldsmr4.gesdisc.eosdis.nasa.gov/daac-bin/OTF/HTTP_services.cgi?'
+            hostname = 'http://goldsmr4.gesdisc.eosdis.nasa.gov/'
         else:
             raise ValueError(
                 "dataset must be 'singleLevel' or 'sultiLevel'. You entered %s"
@@ -733,7 +733,12 @@ class merra2Player:
         year = date[:4]
         month = date[4:6]
         dt = datetime.datetime.strptime(date, '%Y%m%d')
-        if dt >= datetime.datetime.strptime('20110101', '%Y%m%d'):
+        # numbering for data files... For some reason the last six months
+        # of 2021 use 401 rather than 400, then 2022 goes back to 400
+        if dt >= datetime.datetime.strptime('20210601', '%Y%m%d') \
+           and dt <= datetime.datetime.strptime('20220101', '%Y%m%d'):
+            streamN = '401'
+        elif dt >= datetime.datetime.strptime('20110101', '%Y%m%d'):
             streamN = '400'
         elif dt >= datetime.datetime.strptime('20010101', '%Y%m%d'):
             streamN = '300'
@@ -745,11 +750,11 @@ class merra2Player:
         if dataset == "multiLevel":
             if self.product == 'inst':
                 shortname = 'M2I3NPASM'
-                filenameBase = 'FILENAME=/data/s4pa/MERRA2/M2I3NPASM.5.12.4'
+                filenameBase = 'data/MERRA2/M2I3NPASM.5.12.4'
                 filename = 'MERRA2_%s.inst3_3d_asm_Np.%s.nc4' % (streamN, date)
             elif self.product == 'tavg':
                 shortname = 'M2T3NVASM'
-                filenameBase = 'FILENAME=/data/s4pa/MERRA2/M2T3NVASM.5.12.4'
+                filenameBase = 'data/MERRA2/M2T3NVASM.5.12.4'
                 filename = 'MERRA2_%s.tavg3_3d_asm_Nv.%s.nc4' % (streamN, date)
             format = (
                 '&FORMAT=bmM0Lw&BBOX=%2.1f,%2.3f,%2.1f,%2.3f&LABEL=svc_%s&FLAGS=&SHORTNAME=%s&SERVICE=SUBSET_MERRA2&LAYERS=&VERSION=1.02&VARIABLES=t,ps,qv,o3,h,ql,qi'
@@ -760,11 +765,11 @@ class merra2Player:
         elif dataset == "singleLevel":
             if self.product == 'inst':
                 shortname = 'M2I1NXASM'
-                filenameBase = 'FILENAME=/data/MERRA2/M2I1NXASM.5.12.4'
+                filenameBase = 'data/MERRA2/M2I1NXASM.5.12.4'
                 filename = 'MERRA2_%s.inst1_2d_asm_Nx.%s.nc4' % (streamN, date)
             elif self.product == 'tavg':
                 shortname = 'M2T1NXSLV'
-                filenameBase = 'FILENAME=/data/MERRA2/M2T1NXSLV.5.12.4'
+                filenameBase = 'data/MERRA2/M2T1NXSLV.5.12.4'
                 filename = 'MERRA2_%s.tavg1_2d_slv_Nx.%s.nc4' % (streamN, date)
             format = (
                 '&FORMAT=bmM0Lw&BBOX=%2.1f,%2.3f,%2.1f,%2.3f&LABEL=%s&FLAGS=&SHORTNAME=%s&SERVICE=SUBSET_MERRA2&LAYERS=&VERSION=1.02&VARIABLES=ps,qv2m,t2m,tqi,tql,tqv'
@@ -807,33 +812,33 @@ class merra2Player:
                 return 1
 
         print('Trying to download %s' % url)
-        print('And save the data to %s' % (self.merraDir + filename))
-
-        raise FileNotFoundError
-
-        # TODO note that this doesn't really seem to work at the moment
-        # try:
-        #    if self.verbose:
-        #        print("downloading MERRA2 URL: \n %s" % url)
-
-        #    request = urllib.request.urlopen(url)
-        #    base64string = base64.b64encode('%s:%s' % (username, password))
-
-        #    cj = cookiejar.CookieJar()
-        #    opener = urllib.build_opener(urllib.HTTPCookieProcessor(cj))
-        #    request.add_header("Authorization", "Basic %s" % base64string)
-        #    furl = opener.open(request)
-
-        #    meta = furl.info()
-        #    file_size = int(meta.getheaders("Content-Length")[0])
-        #    print("Downloading: %s Bytes: %s" % (filename, file_size))
-        #    with open(self.merraDir + filename, 'wb') as output:
-        #        output.write(furl.read())
-        #    print("Saved file: %s" % (self.merraDir + filename))
-        #    return 1
-        # except Exception:
-        #    print('generic exception: ' + traceback.format_exc())
-        #    #raise
+        # get current directory, so that we can go back after moving the file
+        currDir = os.getcwd()
+        # need to be in home directory for wget to see proper .netrc with login to NASA Earthdata
+        os.chdir(os.path.expanduser('~'))
+        # download the file using wget
+        download_cmd = 'wget --content-disposition --load-cookies ~/.urs_cookies ' \
+        '--save-cookies ~/.urs_cookies --keep-session-cookies --content-disposition' \
+        ' -i '
+        os.system((download_cmd + url))
+        # wait until download is complete
+        prevSize = 0
+        downloadOngoing = True
+        time.sleep(3)
+        while(downloadOngoing):
+            time.sleep(1)
+            currSize = os.path.getsize(filename)
+            # filesize has stopped changing, because download is done
+            if(currSize == prevSize):
+                downloadOngoing = False
+            else:
+                prevSize = currSize
+        time.sleep(3)
+        # move to output location
+        print('And save the data to %s' % (currDir + '/' + self.merraDir + filename))
+        os.system('mv %s %s' % (filename, currDir + '/' + self.merraDir + filename))
+        # return to initial directory
+        os.chdir(currDir)
 
     def retrieve_merra2_data_for_dateRange(
         self, dateStart, dateEnd=None, dataset="multiLevel"
