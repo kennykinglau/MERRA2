@@ -738,6 +738,8 @@ class merra2Player:
         if dt >= datetime.datetime.strptime('20210601', '%Y%m%d') \
            and dt <= datetime.datetime.strptime('20220101', '%Y%m%d'):
             streamN = '401'
+        elif date[:6] == '202009':
+            streamN = '401'
         elif dt >= datetime.datetime.strptime('20110101', '%Y%m%d'):
             streamN = '400'
         elif dt >= datetime.datetime.strptime('20010101', '%Y%m%d'):
