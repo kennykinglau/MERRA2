@@ -733,10 +733,10 @@ class merra2Player:
         year = date[:4]
         month = date[4:6]
         dt = datetime.datetime.strptime(date, '%Y%m%d')
-        # numbering for data files... For some reason the last six months
+        # numbering for data files... For some reason July/August/September
         # of 2021 use 401 rather than 400, then 2022 goes back to 400
         if dt >= datetime.datetime.strptime('20210601', '%Y%m%d') \
-           and dt <= datetime.datetime.strptime('20220101', '%Y%m%d'):
+           and dt < datetime.datetime.strptime('20211001', '%Y%m%d'):
             streamN = '401'
         elif date[:6] == '202009':
             streamN = '401'
