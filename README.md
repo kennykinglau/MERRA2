@@ -5,7 +5,7 @@
 > merra2Player. Therefore, it is strongly recommended that you choose a new
 > password not used on any other website.
 2. Approve the GES DISC application for authorization.
-   <ol style="list-style-type: lower-alpha;">
+   <ol>
      <li>Navigate to Applications > Authorized Apps</li>
      <li>Click on "Approve More Applications"</li>
      <li>Search for "NASA GESDISC DATA ARCHIVE" (without the quotes)</li>
