@@ -5,11 +5,12 @@
 > merra2Player. Therefore, it is strongly recommended that you choose a new
 > password not used on any other website.
 2. Approve the GES DISC application for authorization.
-   a. Navigate to Applications > Authorized Apps
-   b. Click on "Approve More Applications"
-   c. Search for "NASA GESDISC DATA ARCHIVE" (without the quotes)
-   d. Click on "Authorize" next to "NASA GESDISC DATA ARCHIVE" and follow the
-      steps.
+   <ol type="a">
+     <li>Navigate to Applications > Authorized Apps</li>
+     <li>Click on "Approve More Applications"</li>
+     <li>Search for "NASA GESDISC DATA ARCHIVE" (without the quotes)</li>
+     <li>Click on "Authorize" next to "NASA GESDISC DATA ARCHIVE" and follow the steps.</li>
+   </ol>
 3. Install Wget (if not already installed)
 > [!TIP]
 > Wget is available with most package managers. If you're using macOS, it is
