@@ -1,4 +1,5 @@
 import os
+import sys
 import urllib
 import datetime
 import dateutil.rrule as rr
@@ -6,7 +7,8 @@ import dateutil.parser as dparser
 
 import netCDF4
 import subprocess
-from pylab import *
+import numpy as np
+import matplotlib.pyplot as plt
 import glob
 import http.cookiejar
 import traceback
@@ -41,17 +43,20 @@ class merra2Player:
                 "WARNING: You must have a symlink which points to \"merra2_products\""
             )
             print(
-                "WARNING: ln -s /n/holylfs04/LABS/kovac_lab/keck/wvr_products/merra2_analysis merra2_products"
+                "WARNING: ln -s kovac_lab/keck/wvr_products/merra2_analysis merra2_products"
             )
             print("Stopping")
-            exit()
+            sys.exit()
 
         if product == 'inst':
             folder = 'merra2_products'
-            self.webDir = '/n/holylfs04/LABS/kovac_lab/www/merra2_web/web_output_files/'
+            self.webDir = 'kovac_lab/www/merra2_web/web_output_files/'
         elif product == 'tavg':
             folder = 'merra2_products_averaged'
             self.webDir = 'merra2_products_averaged/web_output_files/'
+        else:
+            raise ValueError(f"invalid product: {product}")
+
         self.dataDir = '%s/%s/' % (folder, self.site['name'])
         if not os.path.exists(self.dataDir):
             os.system('mkdir %s/%s' % (folder, self.site['name']))
@@ -75,9 +80,9 @@ class merra2Player:
             print("Stopping")
             exit()
 
-        self.webDir = '/n/holylfs04/LABS/kovac_lab/www/merra2_web/web_output_files/'
+        self.webDir = 'kovac_lab/www/merra2_web/web_output_files/'
         self.wxDir = '%s/wx_data/' % folder  # independent of holylfs directory
-        self.auxDataDir = '/n/holylfs04/LABS/kovac_lab/keck/keck_aux_data/bandpass/'
+        self.auxDataDir = 'kovac_lab/keck/keck_aux_data/bandpass/'
 
     def defineSite(self, site=None):
         """
@@ -188,29 +193,29 @@ class merra2Player:
         tsky = {}
         for k in keys:
             tsky[k] = []
-        f270, band270f, band270rj = self.readBandpass(bandopt={'name': 'BK270'})
-        f220, band220f, band220rj = self.readBandpass(bandopt={'name': 'BK220'})
-        f210, band210f, band210rj = self.readBandpass(bandopt={'name': 'BK210'})
-        f150, band150f, band150rj = self.readBandpass(bandopt={'name': 'BK150'})
-        f100, band100f, band100rj = self.readBandpass(bandopt={'name': 'BK95'})
-        f30, band30f, band30rj = self.readBandpass(bandopt={'name': 'BK30'})
-        f31, band31f, band31rj = self.readBandpass(bandopt={'name': 'BK31'})
-        f40, band40f, band40rj = self.readBandpass(bandopt={'name': 'BK40'})
-        f41, band41f, band41rj = self.readBandpass(bandopt={'name': 'BK41'})
-        f850, band850f, band850rj = self.readBandpass(bandopt={'name': 'tipper850'})
-        feht, bandeht_hi, bandeht_hi = self.readBandpass(bandopt={'name': 'EHT_hi'})
-        feht, bandeht_lo, bandeht_lo = self.readBandpass(bandopt={'name': 'EHT_lo'})
+        # f270, band270f, band270rj = self.readBandpass(bandopt={'name': 'BK270'})
+        # f220, band220f, band220rj = self.readBandpass(bandopt={'name': 'BK220'})
+        # f210, band210f, band210rj = self.readBandpass(bandopt={'name': 'BK210'})
+        # f150, band150f, band150rj = self.readBandpass(bandopt={'name': 'BK150'})
+        # f100, band100f, band100rj = self.readBandpass(bandopt={'name': 'BK95'})
+        # f30, band30f, band30rj = self.readBandpass(bandopt={'name': 'BK30'})
+        # f31, band31f, band31rj = self.readBandpass(bandopt={'name': 'BK31'})
+        # f40, band40f, band40rj = self.readBandpass(bandopt={'name': 'BK40'})
+        # f41, band41f, band41rj = self.readBandpass(bandopt={'name': 'BK41'})
+        # f850, band850f, band850rj = self.readBandpass(bandopt={'name': 'tipper850'})
+        # feht, bandeht_hi, bandeht_hi = self.readBandpass(bandopt={'name': 'EHT_hi'})
+        # feht, bandeht_lo, bandeht_lo = self.readBandpass(bandopt={'name': 'EHT_lo'})
 
-        if bandopt['name'] == 'custom':
-            fc, bandcf, bandcrj = self.readBandpass('custom')
-            tsky['custom'] = []
+        # if bandopt['name'] == 'custom':
+        #     fc, bandcf, bandcrj = self.readBandpass('custom')
+        #     tsky['custom'] = []
 
         for date in dateList:
             amcFileList = self.checkAmcFileForDate(date)
-            if size(amcFileList) != 0:
+            if np.size(amcFileList) != 0:
                 print(
                     "Found %d amc input profiles for %s. Not regenerating ... "
-                    % (size(amcFileList), date)
+                    % (np.size(amcFileList), date)
                 )
             else:
                 profile = self.createProfile(date.strftime('%Y%m%d'), plotFig=False)
@@ -224,24 +229,24 @@ class merra2Player:
                         amcFile, f0=0.0, f1=1200.0, df=1000.0
                     )
                     tsky['pwv'].append(pwv)
-                    tsky['BK30'].append(self.integBand(f30, band30rj, fs, trj))
-                    tsky['BK31'].append(self.integBand(f31, band31rj, fs, trj))
-                    tsky['BK40'].append(self.integBand(f40, band40rj, fs, trj))
-                    tsky['BK41'].append(self.integBand(f41, band41rj, fs, trj))
-                    tsky['BK100'].append(self.integBand(f100, band100rj, fs, trj))
-                    tsky['BK150'].append(self.integBand(f150, band150rj, fs, trj))
-                    tsky['BK210'].append(self.integBand(f210, band210rj, fs, trj))
-                    tsky['BK220'].append(self.integBand(f220, band220rj, fs, trj))
-                    tsky['BK270'].append(self.integBand(f270, band270rj, fs, trj))
-                    tsky['tipper850'].append(
-                        self.integBand(f850, band850rj, fs, tb)
-                    )  # Note: Integrate tb because its a volume-based Planck law rather than a 1d.
-                    tsky['EHT_hi'].append(self.integBand(feht, bandeht_hi, fs, trj))
-                    tsky['EHT_lo'].append(self.integBand(feht, bandeht_lo, fs, trj))
-                    if band['name'] == 'custom':
-                        tsky['custom'].append(self.integBand(fc, bandcrj, fs, trj))
-                    integratedTx = self.integBand(f850, band850rj, fs, exp(-tau))
-                    tsky['tau850'].append(-log(integratedTx))
+                    # tsky['BK30'].append(self.integBand(f30, band30rj, fs, trj))
+                    # tsky['BK31'].append(self.integBand(f31, band31rj, fs, trj))
+                    # tsky['BK40'].append(self.integBand(f40, band40rj, fs, trj))
+                    # tsky['BK41'].append(self.integBand(f41, band41rj, fs, trj))
+                    # tsky['BK100'].append(self.integBand(f100, band100rj, fs, trj))
+                    # tsky['BK150'].append(self.integBand(f150, band150rj, fs, trj))
+                    # tsky['BK210'].append(self.integBand(f210, band210rj, fs, trj))
+                    # tsky['BK220'].append(self.integBand(f220, band220rj, fs, trj))
+                    # tsky['BK270'].append(self.integBand(f270, band270rj, fs, trj))
+                    # tsky['tipper850'].append(
+                    #     self.integBand(f850, band850rj, fs, tb)
+                    # )  # Note: Integrate tb because its a volume-based Planck law rather than a 1d.
+                    # tsky['EHT_hi'].append(self.integBand(feht, bandeht_hi, fs, trj))
+                    # tsky['EHT_lo'].append(self.integBand(feht, bandeht_lo, fs, trj))
+                    # if bandopt['name'] == 'custom':
+                    #     tsky['custom'].append(self.integBand(fc, bandcrj, fs, trj))
+                    # integratedTx = self.integBand(f850, band850rj, fs, np.exp(-tau))
+                    # tsky['tau850'].append(-np.log(integratedTx))
                 except:
                     pass
 
@@ -320,7 +325,7 @@ class merra2Player:
             de = ds
         else:
             de = datetime.datetime.strptime(end, '%Y%m%d')
-        months = [dt for dt in rrule(MONTHLY, dtstart=ds, until=de)]
+        months = [dt for dt in rr.rrule(rr.MONTHLY, dtstart=ds, until=de)]
         tipperTime = []
         tipperData = []
 
@@ -329,17 +334,17 @@ class merra2Player:
             yearMonth = month.strftime('%Y-%m')
             tipperFile = self.tipperDir + '%s-%s-0.dat' % (initial, yearMonth)
             try:
-                tipperData.append(genfromtxt(tipperFile))
+                tipperData.append(np.genfromtxt(tipperFile))
             except:
                 pass
-        tipperData = concatenate(tipperData, axis=0)
+        tipperData = np.concatenate(tipperData, axis=0)
         tipperData = np.transpose(tipperData)
 
         # create datetime
         epoch = datetime.datetime(1995, 1, 1, 0, 0, 0)
         for f in tipperData[4, :]:
             tipperTime.append(epoch + datetime.timedelta(days=f))
-        tipperTime = array(tipperTime)
+        tipperTime = np.array(tipperTime)
 
         # chop tipper tod to request start and end dates
         # istart,val0 = self.index_nearest(tipperTime,ds , 1)
@@ -360,12 +365,12 @@ class merra2Player:
         input can be single values or arrays. outputs will be in the same format.
         """
         print("Calculating tipper Tsky and Tsky_error")
-        tsky = (tatm / theta) * (1 - exp(-tau))
+        tsky = (tatm / theta) * (1 - np.exp(-tau))
 
-        dtatm = (1 - exp(-tau)) / theta * sigma_tatm
-        dtheta = tatm * (1 - exp(-tau)) / theta ** 2 * sigma_theta
-        dtau = tatm * exp(-tau) / theta * sigma_tau
-        dtsky = sqrt(dtatm ** 2 + dtheta ** 2 + dtau ** 2)
+        dtatm = (1 - np.exp(-tau)) / theta * sigma_tatm
+        dtheta = tatm * (1 - np.exp(-tau)) / theta ** 2 * sigma_theta
+        dtau = tatm * np.exp(-tau) / theta * sigma_tau
+        dtsky = np.sqrt(dtatm ** 2 + dtheta ** 2 + dtau ** 2)
 
         return tsky, dtsky
 
@@ -381,7 +386,7 @@ class merra2Player:
         # print "Resampling Merra2 data onto tipper time"
 
         # helper function to convert datetime array into seconds array
-        datetime2seconds = vectorize(lambda x: x.total_seconds())
+        datetime2seconds = np.vectorize(lambda x: x.total_seconds())
 
         minutes = 1
         # merra2 is exactly every 3 hours = 365*24/3. 2920 pts per year
@@ -392,17 +397,17 @@ class merra2Player:
         t = list(
             rr.rrule(rr.MINUTELY, interval=minutes, dtstart=merraTime[0], count=Nhi)
         )
-        dt = array(t) - merraTime[0]
+        dt = np.array(t) - merraTime[0]
         dt = datetime2seconds(dt)
 
         # convert merra2 time into array of seconds since start of merra2 year.
-        dt_merra2 = array(merraTime) - merraTime[0]
+        dt_merra2 = np.array(merraTime) - merraTime[0]
         dt_merra2 = datetime2seconds(dt_merra2)
         # resample merra2 data to new 10mn time interval
         tipper850_resamp = signal.resample(merraTsky, Nhi)
 
         # convert tipper time into array of seconds since start of merra2 year.
-        dt_tipper = array(tipperTime) - merraTime[0]
+        dt_tipper = np.array(tipperTime) - merraTime[0]
         dt_tipper = datetime2seconds(dt_tipper)
 
         f = interpolate.interp1d(dt, tipper850_resamp, fill_value='extrapolate')
@@ -474,8 +479,8 @@ class merra2Player:
             raise ValueError("invalid product name. choose inst or aver.")
 
         if plotFig:
-            allData = scatter(dt, Tsky, label="all data, every 12.75 minutes")
-            averagedData = errorbar(
+            allData = plt.scatter(dt, Tsky, label="all data, every 12.75 minutes")
+            averagedData = plt.errorbar(
                 newdt,
                 tipper_m,
                 yerr=tipper_s,
@@ -484,14 +489,14 @@ class merra2Player:
                 fmt="o",
                 label="averaged data, every 3 hours",
             )
-            legend(handles=[allData, averagedData])
+            plt.legend(handles=[allData, averagedData])
 
-            grid()
-            xlim([newdt[0], newdt[-1]])
-            xlabel('DateTime')
-            ylabel('Tsky (K)')
-            suptitle("Tipper data: raw and averaged")
-            savefig("test.png")
+            plt.grid()
+            plt.xlim([newdt[0], newdt[-1]])
+            plt.xlabel('DateTime')
+            plt.ylabel('Tsky (K)')
+            plt.suptitle("Tipper data: raw and averaged")
+            plt.savefig("test.png")
 
         return tipper_m, tipper_s
 
@@ -516,13 +521,13 @@ class merra2Player:
         )
         os.chdir(cwd)
 
-        return sort(amcFiles)
+        return np.sort(amcFiles)
 
     def retrieve_SPWx_data_for_dateRange(self, dstart='', dend=''):
 
         ds = datetime.datetime.strptime(dstart, '%Y%m%d')
         de = datetime.datetime.strptime(dend, '%Y%m%d')
-        for month in rrule(MONTHLY, dtstart=ds, until=de):
+        for month in rr.rrule(rr.MONTHLY, dtstart=ds, until=de):
             date = month.strftime('%Y%m%d')
             ret = self.retrieve_SPWx_data_for_date(date)
 
@@ -548,8 +553,8 @@ class merra2Player:
         )
         print("Downloading data from %s" % url)
         try:
-            f = urllib2.urlopen(url)
-            data = f.read()
+            with urllib.request.urlopen(url) as response:
+                data = response.read()
             with open(self.wxDir + filename, "wb") as code:
                 code.write(data)
             return 1
@@ -580,10 +585,10 @@ class merra2Player:
 
         if verbose:
             print("Reading %s" % wxFile)
-        d = genfromtxt(
+        d = np.genfromtxt(
             self.wxDir + wxFile, delimiter='', dtype='S,i,i,i,i,i,i,f,i,f,f,f,f,f,f'
         )
-        dt = array([datetime.datetime(t[1], t[2], t[3], t[4], t[5]) for t in d])
+        dt = np.array([datetime.datetime(t[1], t[2], t[3], t[4], t[5]) for t in d])
         wx = {
             'time': dt,
             'presmB': d['f9'],
@@ -594,7 +599,7 @@ class merra2Player:
         }
 
         # exclude junk data
-        q = flatnonzero(
+        q = np.flatnonzero(
             (wx['presmB'] != -999.9) & (wx['tempC'] != -999.9) & (wx['rh'] != -99.0)
         )
         if q != []:
@@ -603,11 +608,11 @@ class merra2Player:
         # down-select to given time range
         if shrink != 0:
             f = shrink * 60
-            nrows = size(wx['time'])
-            q = flatnonzero(wx['time'] == dat)
-            while size(q) == 0:
+            nrows = np.size(wx['time'])
+            q = np.flatnonzero(wx['time'] == dat)
+            while np.size(q) == 0:
                 dat = dat + datetime.timedelta(seconds=60)
-                q = flatnonzero(wx['time'] == dat)
+                q = np.flatnonzero(wx['time'] == dat)
             for k in wx.keys():
                 wx[k] = wx[k][max(q - 60, 0) : min(q + 60, nrows)]
 
@@ -645,7 +650,7 @@ class merra2Player:
 
         if verbose:
             print("Reading %s" % wxFile)
-        wx = genfromtxt(
+        wx = np.genfromtxt(
             self.wxDir + wxFile, delimiter='', names=True, invalid_raise=False
         )
 
@@ -665,16 +670,16 @@ class merra2Player:
             os.chdir(self.wxDir)
             dat = month.strftime('%Y%m') + '*'
             files = glob.glob('%s_wx_B2.txt' % dat)
-            print(size(files))
+            print(np.size(files))
             os.chdir(cwd)
             mwx = []
             for f in files:
                 wx = self.readWxData(filename=f, verbose=False)
-                mwx.append(mean(wx['presmB']))
-            clf()
-            plot(mwx)
-            print(dat, mean(mwx), std(mwx))
-            raw_input()
+                mwx.append(np.mean(wx['presmB']))
+            plt.clf()
+            plt.plot(mwx)
+            print(dat, np.mean(mwx), np.std(mwx))
+            input()
 
     def closestPoints(self, lat, lon):
         """
@@ -683,12 +688,12 @@ class merra2Player:
         This retuns the lat/long grid MERRA2 grid points
         """
         lat0, lat1, lon0, lon1 = 0, 0, 0, 0
-        for i in arange(-90, 90, 0.5):
+        for i in np.arange(-90, 90, 0.5):
             if lat >= i and lat <= i + 0.5:
                 lat0 = i
                 lat1 = i + 0.5
                 break
-        for j in arange(-180, 180, 0.625):
+        for j in np.arange(-180, 180, 0.625):
             if lon >= j and lon <= j + 0.625:
                 lon0 = j
                 lon1 = j + 0.625
@@ -883,10 +888,25 @@ class merra2Player:
 
         print(
             "Summary: Start: %s, End: %s : %d files available, last: %s"
-            % (dateStart, dateEnd, size(dateList), dateList[-1])
+            % (dateStart, dateEnd, np.size(dateList), dateList[-1])
         )
 
         return dateList
+
+    @staticmethod
+    def _scattered_interp2d(x, y, z):
+        """
+        Interpolate over a 2-D grid.
+        x, y and z are arrays of values used to approximate some function f
+        (z[i] = f(x[i], y[i]) for all i) which returns a scalar value z.
+        x, y, and z should have the same length.
+        This function returns a function whose call method uses spline
+        interpolation with a degree 1 spline (equivalent to linear interpolation
+        with interp2d) to find the value of new points.
+        """
+        # Based off of https://docs.scipy.org/doc/scipy/tutorial/interpolate/interp_transition_guide.html#interp2d-with-full-coordinates-of-points-scattered-interpolation
+        tck = interpolate.bisplrep(x, y, z, kx=1, ky=1, s=0)
+        return lambda x_new, y_new: interpolate.bisplev(x_new, y_new, tck).T
 
     def createProfile(self, date, simplify=10, plotFig=False):
         """
@@ -902,8 +922,8 @@ class merra2Player:
 
         # setup the plot
         if plotFig:
-            figure(1, figsize=(10, 10))
-            clf()
+            plt.figure(1, figsize=(10, 10))
+            plt.clf()
 
         gnd = self.site['gndData']
         cldtype = self.site['cldtype']
@@ -947,14 +967,14 @@ class merra2Player:
                 try:
                     q.append(
                         min(
-                            flatnonzero(
+                            np.flatnonzero(
                                 d.variables['T'][ti, :, ilat, ilon].mask == False
                             )
                         )
                     )
                 except:
                     q.append(
-                        min(flatnonzero(d.variables['H'][ti, :, ilat, ilon] < 1e10))
+                        min(np.flatnonzero(d.variables['H'][ti, :, ilat, ilon] < 1e10))
                     )
         qb = max(q)  # index of bottom layer
 
@@ -970,10 +990,10 @@ class merra2Player:
         for t in timeList:
             dateTime.append(dateStart + datetime.timedelta(seconds=int(t * 60)))
 
-        layers = zeros(
+        layers = np.zeros(
             [ntimesteps, nPressureLevels, 7]
         )  # 5 for P, T, xH20, xO3,  H. need to add QI (ice water), QL (liquid water)
-        layers[:, :, 0] = tile(pressureList, [ntimesteps, 1])
+        layers[:, :, 0] = np.tile(pressureList, [ntimesteps, 1])
 
         # For each time/pressure level, interpolate inwards.
         for t in range(ntimesteps):
@@ -1053,22 +1073,22 @@ class merra2Player:
                             * s.variables['TQI'][t, ilat, ilon]
                             / s.variables['TQI'][t - 2, ilat, ilon]
                         )
-                TInterp = interpolate.interp2d(
+                TInterp = self._scattered_interp2d(
                     list(zip(*interpList))[0], list(zip(*interpList))[1], dataPoints[0]
                 )
-                QVInterp = interpolate.interp2d(
+                QVInterp = self._scattered_interp2d(
                     list(zip(*interpList))[0], list(zip(*interpList))[1], dataPoints[1]
                 )
-                O3Interp = interpolate.interp2d(
+                O3Interp = self._scattered_interp2d(
                     list(zip(*interpList))[0], list(zip(*interpList))[1], dataPoints[2]
                 )
-                HInterp = interpolate.interp2d(
+                HInterp = self._scattered_interp2d(
                     list(zip(*interpList))[0], list(zip(*interpList))[1], dataPoints[3]
                 )
-                QLInterp = interpolate.interp2d(
+                QLInterp = self._scattered_interp2d(
                     list(zip(*interpList))[0], list(zip(*interpList))[1], dataPoints[4]
                 )
-                QIInterp = interpolate.interp2d(
+                QIInterp = self._scattered_interp2d(
                     list(zip(*interpList))[0], list(zip(*interpList))[1], dataPoints[5]
                 )
                 layers[t, l, 1] = TInterp(lat, lon)
@@ -1084,8 +1104,8 @@ class merra2Player:
 
         # redefine a new array to hold layers
         # and include one more for extrapolated layer
-        layers_ex = zeros([ntimesteps, nPressureLevels + 1, 7])
-        last_layer = zeros(7)
+        layers_ex = np.zeros([ntimesteps, nPressureLevels + 1, 7])
+        last_layer = np.zeros(7)
         minindx = nPressureLevels  # eventually to resize the layer_ex array to contain only up to surface
 
         # incorporating surface data
@@ -1098,9 +1118,9 @@ class merra2Player:
                 wxFilename = '%s_%s_wx_keck.txt' % (date, time)
                 # wx = self.readWxData(filename=wxFilename)
                 wx = self.readSPWxData(date=date, time=time, shrink=1)
-                Pgnd = mean(wx['presmB'])
-                Tgnd = mean(wx['tempC']) + 273.15  # from C to K.
-                Rhgnd = mean(wx['rh'])
+                Pgnd = np.mean(wx['presmB'])
+                Tgnd = np.mean(wx['tempC']) + 273.15  # from C to K.
+                Rhgnd = np.mean(wx['rh'])
                 print("Mean Ground Pres: %3.2f mBar" % Pgnd)
                 print("Mean Ground Temp: %3.2f K" % Tgnd)
                 print("Mean Ground RH: %3.2f%%" % Rhgnd)
@@ -1113,13 +1133,14 @@ class merra2Player:
                 last_layer[4] = layers[ti, 0, 4]
 
             elif gnd == 3:
-                # fit a 1d polynomial to lowest 2 layersand extrapolate on it.
+                # fit a 1d polynomial to lowest 2 layers and extrapolate on it.
                 for i in range(1, 5):
-                    fit = polyfit(log(layers[ti, 0:2, 0]), layers[ti, 0:2, i], 1)
-                    f = poly1d(fit)
+                    fit = np.polyfit(np.log(layers[ti, 0:2, 0]), layers[ti, 0:2, i], 1)
+                    f = np.poly1d(fit)
                     # only works with later version of scipy.
                     # f = interp1d(layers[0,0:3,0],layers[0,0:3,i],fill_value='extrapolate')
-                    last_layer[i] = f(log(Pmean))
+                    # FIXME: fix undefined variable "Pmean" or remove this block
+                    last_layer[i] = f(np.log(Pmean))
 
             elif gnd == 2:
                 # we first interpolate vertically and then inwards.
@@ -1127,7 +1148,7 @@ class merra2Player:
                 try:
                     P = interpolate.interp1d(
                         layers[ti, :, 4],
-                        log10(layers[ti, :, 0]),
+                        np.log10(layers[ti, :, 0]),
                         fill_value="extrapolate",
                     )
                     Pgnd = 10 ** P(Hgnd)
@@ -1139,31 +1160,31 @@ class merra2Player:
 
                 dataPoints = [[] for i in range(2)]  # T and QV
                 for (ilat, ilon) in icoordList:
-                    gnd_pressures = insert(
+                    gnd_pressures = np.insert(
                         d.variables['lev'][qb:],
                         0,
                         [s.variables['PS'][ti, ilat, ilon] / 100],
                     )
                     if ti % 3 == 0:
-                        gnd_temps = insert(
+                        gnd_temps = np.insert(
                             d.variables["T"][ti / 3, qb:, ilat, ilon],
                             0,
                             [s.variables['T2M'][ti, ilat, ilon]],
                         )
-                        gnd_wv = insert(
+                        gnd_wv = np.insert(
                             d.variables["QV"][ti / 3, qb:, ilat, ilon],
                             0,
                             [s.variables['QV2M'][ti, ilat, ilon]],
                         )
                     if ti % 3 == 1:
-                        gnd_temps = insert(
+                        gnd_temps = np.insert(
                             d.variables["T"][(ti - 1) / 3, qb:, ilat, ilon]
                             * s.variables['T2M'][ti, ilat, ilon]
                             / s.variables['T2M'][ti - 1, ilat, ilon],
                             0,
                             [s.variables['T2M'][ti, ilat, ilon]],
                         )
-                        gnd_wv = insert(
+                        gnd_wv = np.insert(
                             d.variables["QV"][(ti - 1) / 3, qb:, ilat, ilon]
                             * s.variables['TQV'][ti, ilat, ilon]
                             / s.variables['TQV'][ti - 1, ilat, ilon],
@@ -1171,14 +1192,14 @@ class merra2Player:
                             [s.variables['QV2M'][ti, ilat, ilon]],
                         )
                     if ti % 3 == 2:
-                        gnd_temps = insert(
+                        gnd_temps = np.insert(
                             d.variables["T"][(ti - 2) / 3, qb:, ilat, ilon]
                             * s.variables['T2M'][ti, ilat, ilon]
                             / s.variables['T2M'][ti - 2, ilat, ilon],
                             0,
                             [s.variables['T2M'][ti, ilat, ilon]],
                         )
-                        gnd_wv = insert(
+                        gnd_wv = np.insert(
                             d.variables["QV"][(ti - 2) / 3, qb:, ilat, ilon]
                             * s.variables['TQV'][ti, ilat, ilon]
                             / s.variables['TQV'][ti - 2, ilat, ilon],
@@ -1193,10 +1214,10 @@ class merra2Player:
                         gnd_pressures, gnd_wv, fill_value="extrapolate"
                     )
                     dataPoints[1].append(qv(Pgnd))
-                TInterp = interpolate.interp2d(
+                TInterp = self._scattered_interp2d(
                     list(zip(*interpList))[0], list(zip(*interpList))[1], dataPoints[0]
                 )
-                QVInterp = interpolate.interp2d(
+                QVInterp = self._scattered_interp2d(
                     list(zip(*interpList))[0], list(zip(*interpList))[1], dataPoints[1]
                 )
                 Tgnd = TInterp(lat, lon)
@@ -1215,67 +1236,67 @@ class merra2Player:
             # print Pgnd, layers[ti,:,0]
             if Pgnd > layers[ti, 0, 0]:
                 # minindx = 0
-                layers_ex[ti, :, :] = concatenate([[last_layer], layers[ti, :, :]])
+                layers_ex[ti, :, :] = np.concatenate([[last_layer], layers[ti, :, :]])
             else:
                 # insert the ground layer at the right position in the pressure list
                 # also delete the layers that are "below" the ground layer (usually because it is on a peak).
-                indx = where(layers[ti, :, 0] < Pgnd)[0][0]
+                indx = np.where(layers[ti, :, 0] < Pgnd)[0][0]
                 # if (indx < minindx):
                 #    maxindx = indx
-                # layers_ex[ti,:nPressureLevels-indx+1,:] = concatenate([[last_layer],layers[ti,indx:,:]])
-                layers_ex[ti, :nPressureLevels, :] = concatenate(
+                # layers_ex[ti,:nPressureLevels-indx+1,:] = np.concatenate([[last_layer],layers[ti,indx:,:]])
+                layers_ex[ti, :nPressureLevels, :] = np.concatenate(
                     [np.tile(last_layer, (indx, 1)), layers[ti, indx:, :]]
                 )
                 ## introduce indx # of copies of last_layer (which doesn't affect am's results)
                 ## this hack ensures that the simplifying of the layers doesn't improperly reshape the layer array.
-                # layers_ex[ti,:,:]= insert(layers[ti,:,:],1,[last_layer],0)
+                # layers_ex[ti,:,:]= np.insert(layers[ti,:,:],1,[last_layer],0)
 
             # create plot for the day
             if plotFig:
-                subplot(2, 2, 1)  # temperature
-                plot(layers_ex[ti, :, 1], layers_ex[ti, :, 0], '.-')
-                # plot([last_layer[1]],[last_layer[0]],'or')
+                plt.subplot(2, 2, 1)  # temperature
+                plt.plot(layers_ex[ti, :, 1], layers_ex[ti, :, 0], '.-')
+                # plt.plot([last_layer[1]],[last_layer[0]],'or')
                 if ti == ntimesteps - 1:
-                    ylim([750, 1e-1])
-                    grid()
-                    yscale('log')
-                    xlabel('Temp [K]')
-                    ylabel('Press [mB]')
+                    plt.ylim([750, 1e-1])
+                    plt.grid()
+                    plt.yscale('log')
+                    plt.xlabel('Temp [K]')
+                    plt.ylabel('Press [mB]')
 
-                subplot(2, 2, 2)  # height
-                plot(layers_ex[ti, :, 4], layers_ex[ti, :, 0], '.-')
-                # plot([last_layer[4]],[last_layer[0]],'or')
+                plt.subplot(2, 2, 2)  # height
+                plt.plot(layers_ex[ti, :, 4], layers_ex[ti, :, 0], '.-')
+                # plt.plot([last_layer[4]],[last_layer[0]],'or')
                 if ti == ntimesteps - 1:
-                    grid()
-                    yscale('log')
-                    ylim([750, 1e-1])
-                    xlabel('height [m]')
-                    ylabel('Press [mB]')
+                    plt.grid()
+                    plt.yscale('log')
+                    plt.ylim([750, 1e-1])
+                    plt.xlabel('height [m]')
+                    plt.ylabel('Press [mB]')
 
-                subplot(2, 2, 3)  # xh2o
-                plot(layers_ex[ti, :, 2], layers_ex[ti, :, 0], '.-')
-                # plot([last_layer[2]],[last_layer[0]],'or')
+                plt.subplot(2, 2, 3)  # xh2o
+                plt.plot(layers_ex[ti, :, 2], layers_ex[ti, :, 0], '.-')
+                # plt.plot([last_layer[2]],[last_layer[0]],'or')
                 if ti == ntimesteps - 1:
-                    # yscale('log')
-                    ylim([750, 1e-1])
-                    grid()
-                    xlabel('h2o mixing ratio [ppm]')
-                    ylabel('Press [mB]')
+                    # plt.yscale('log')
+                    plt.ylim([750, 1e-1])
+                    plt.grid()
+                    plt.xlabel('h2o mixing ratio [ppm]')
+                    plt.ylabel('Press [mB]')
 
-                subplot(2, 2, 4)  # xO3
-                plot(layers_ex[ti, :, 3], layers_ex[ti, :, 0], '.-')
-                # plot([last_layer[3]],[last_layer[0]],'or')
+                plt.subplot(2, 2, 4)  # xO3
+                plt.plot(layers_ex[ti, :, 3], layers_ex[ti, :, 0], '.-')
+                # plt.plot([last_layer[3]],[last_layer[0]],'or')
                 if ti == ntimesteps - 1:
-                    ylim([750, 1e-1])
-                    grid()
-                    yscale('log')
-                    xlabel('O3 mixing ratio [ppm]')
-                    ylabel('Press [mB]')
-                    suptitle(
+                    plt.ylim([750, 1e-1])
+                    plt.grid()
+                    plt.yscale('log')
+                    plt.xlabel('O3 mixing ratio [ppm]')
+                    plt.ylabel('Press [mB]')
+                    plt.suptitle(
                         'MERRA2-based amc profile for %s for %s, gndData:%d '
                         % (self.site['name'], date, gnd)
                     )
-                    savefig(self.amcDir + '%s_gndData%d_amcProfile.png' % (date, gnd))
+                    plt.savefig(self.amcDir + '%s_gndData%d_amcProfile.png' % (date, gnd))
 
         # layers_ex = layers_ex[layers_ex != 0]
         profile = {
@@ -1307,12 +1328,12 @@ class merra2Player:
         """
 
         # The following formula gives log(Psat), with Psat in Pa.
-        ln_T = log(T)
+        ln_T = np.log(T)
         r1 = 54.842763 - 6763.22 / T - 4.210 * ln_T + 0.000367 * T
         r2 = 53.878 - 1331.22 / T - 9.44523 * ln_T + 0.014025 * T
-        ln_Psat = r1 + r2 * tanh(0.0415 * (T - 218.8))
+        ln_Psat = r1 + r2 * np.tanh(0.0415 * (T - 218.8))
         # convert Psat to mB
-        PsatmB = 0.01 * exp(ln_Psat)
+        PsatmB = 0.01 * np.exp(ln_Psat)
         vmr = 0.01 * Rh * (PsatmB / P)
 
         return vmr
@@ -1334,14 +1355,14 @@ class merra2Player:
         dp.append(l[0, -1, 0])
 
         # find layer with Pbase = 10mB
-        q = flatnonzero(l[0, :, 0] >= lastLayerPressure)
+        q = np.flatnonzero(l[0, :, 0] >= lastLayerPressure)
         ilim = q[-1]
         w = dp[q[-1] :]
         # redefine the xh2o and xO3
-        l[:, ilim, 2] = average(l[:, ilim:, 2], weights=w, axis=1)
-        l[:, ilim, 3] = average(l[:, ilim:, 3], weights=w, axis=1)
-        l[:, ilim, 5] = average(l[:, ilim:, 5], weights=w, axis=1)
-        l[:, ilim, 6] = average(l[:, ilim:, 6], weights=w, axis=1)
+        l[:, ilim, 2] = np.average(l[:, ilim:, 2], weights=w, axis=1)
+        l[:, ilim, 3] = np.average(l[:, ilim:, 3], weights=w, axis=1)
+        l[:, ilim, 5] = np.average(l[:, ilim:, 5], weights=w, axis=1)
+        l[:, ilim, 6] = np.average(l[:, ilim:, 6], weights=w, axis=1)
 
         l = l[:, 0 : ilim + 1, :]
         profile['layers'] = l
@@ -1368,7 +1389,7 @@ class merra2Player:
         for t_idx, t in enumerate(profile['time']):
 
             layers = profile['layers'][t_idx, :, :]
-            nlayers = shape(layers)[0]
+            nlayers = np.shape(layers)[0]
 
             tstr = datetime.datetime.strftime(t, '%Y%m%d_%H%M%S')
             amcList.append(
@@ -1473,7 +1494,7 @@ class merra2Player:
                 os.remove(outfile)
                 amcfile = outfile.replace('.out', '.amc')
                 os.remove(amcfile)
-        print(size(failedSpectra))
+        print(np.size(failedSpectra))
         return failedSpectra
 
     def findMissingSpectra(self, year):
@@ -1483,14 +1504,14 @@ class merra2Player:
         dateList = [start + datetime.timedelta(days=i) for i in range(365)]
         for date in dateList:
             datestr = date.strftime('%Y%m%d')
-            nspecPerDay = size(glob.glob(self.amcDir + '*%s*gndData2*.out' % datestr))
+            nspecPerDay = np.size(glob.glob(self.amcDir + '*%s*gndData2*.out' % datestr))
             if nspecPerDay != 8:
                 print(
                     '%s: only %d of 8 amc spectra in that day' % (datestr, nspecPerDay)
                 )
                 missingSpectraDays.append(date)
 
-        print('%d days with missing spectra' % size(missingSpectraDays))
+        print('%d days with missing spectra' % np.size(missingSpectraDays))
 
         return missingSpectraDays
 
@@ -1504,7 +1525,7 @@ class merra2Player:
                 os.remove(amcfile)
                 outfn = amcfile.replace('.amc', '.out')
                 os.remove(outfn)
-        print(size(icewater))
+        print(np.size(icewater))
         return icewater
 
     def run_am(self, amcFileName, za=0.0, f0=50.0, f1=300.0, df=100, h2o_scale=1.0):
@@ -1621,7 +1642,7 @@ class merra2Player:
             Tgnd = Tbase[-1]
             Pgnd = Pbase[-1]
 
-            amOut = genfromtxt(self.amcDir + outfn, delimiter='', names=outfmt)
+            amOut = np.genfromtxt(self.amcDir + outfn, delimiter='', names=outfmt)
 
         except:
             print("ERROR: could not read file output spectra for %s" % outfn)
@@ -1643,8 +1664,8 @@ class merra2Player:
             # single peaked gaussian
             c = 857  # band center in GHz 857
             s = 43.74  # FWHM of 103 GHz in total 43.74
-            f = 600 + arange(600)  # range 600,1200
-            Aflat = exp(-((f - c) ** 2) / (2 * s ** 2))
+            f = 600 + np.arange(600)  # range 600,1200
+            Aflat = np.exp(-((f - c) ** 2) / (2 * s ** 2))
 
             # two half gaussians with a flat top of width 36GHz, centered on 850GHz. low-freq FWHM = 60GHz, high-freq = 74.
             # here are some hacks to ensure that the two Gaussians reach 0.8 at the point where the flat peak starts.
@@ -1652,15 +1673,15 @@ class merra2Player:
             c3 = 847  # 847 # mean of high frequency Gaussian
             s1 = 25.48  # sigma in  GHz (FWHM = 60GHz) (sigma = 25.48 GHz)
             s3 = 31.42  # FWHM = 74GHz (sigma = 31.42 GHz)
-            f1 = 600 + arange(232)  # low-frequency half gaussian #600+arange(232)
-            f2 = 832 + arange(36)  # flat middle peak #832 + arange(36)
-            f3 = 868 + arange(300)  # high-frequency half gaussian #868 + arange(300)
-            f = concatenate([f1, f2, f3])
+            f1 = 600 + np.arange(232)  # low-frequency half gaussian #600+np.arange(232)
+            f2 = 832 + np.arange(36)  # flat middle peak #832 + np.arange(36)
+            f3 = 868 + np.arange(300)  # high-frequency half gaussian #868 + np.arange(300)
+            f = np.concatenate([f1, f2, f3])
 
-            Aflat1 = exp(-((f1 - c1) ** 2) / (2 * s1 ** 2))
-            Aflat2 = full(36, 0.8)  # full(36,0.8)
-            Aflat3 = exp(-((f3 - c3) ** 2) / (2 * s3 ** 2))
-            Aflat = concatenate([Aflat1, Aflat2, Aflat3])
+            Aflat1 = np.exp(-((f1 - c1) ** 2) / (2 * s1 ** 2))
+            Aflat2 = np.full(36, 0.8)  # full(36,0.8)
+            Aflat3 = np.exp(-((f3 - c3) ** 2) / (2 * s3 ** 2))
+            Aflat = np.concatenate([Aflat1, Aflat2, Aflat3])
 
             return f, Aflat, Aflat
 
@@ -1696,9 +1717,9 @@ class merra2Player:
             else:
                 print("bandName must be 'BK30', 'BK31', 'BK40', 'BK41', 'BK95', 'BK150', 'BK210', 'BK220', or 'BK270'")
                 return 0
-            e = genfromtxt(self.auxDataDir + filename, delimiter=',', comments='#')
+            e = np.genfromtxt(self.auxDataDir + filename, delimiter=',', comments='#')
             f = e[:, 0]
-            if shape(e)[1] == 3:
+            if np.shape(e)[1] == 3:
                 Aflat = e[:, 1]
                 Arj = e[:, 2]
                 if Arj[0] == 0:
@@ -1706,9 +1727,9 @@ class merra2Player:
             else:
                 Aflat = e[:, 1]
                 Arj = e[:, 1]
-            q1 = flatnonzero(f > cutoff[1])
-            q2 = flatnonzero(f < cutoff[0])
-            q = concatenate((q1, q2))
+            q1 = np.flatnonzero(f > cutoff[1])
+            q2 = np.flatnonzero(f < cutoff[0])
+            q = np.concatenate((q1, q2))
             Aflat[q] = 0
             Arj[q] = 0
 
@@ -1721,11 +1742,11 @@ class merra2Player:
             elif bandopt['name'] == 'EHT_lo':
                 c = 214.1
                 bw = 4.0
-            f = arange(0, 1200, 0.1)
-            Aflat = ones(12000)
-            q1 = flatnonzero(f > c + bw / 2.0)
-            q2 = flatnonzero(f < c - bw / 2.0)
-            q = concatenate((q1, q2))
+            f = np.arange(0, 1200, 0.1)
+            Aflat = np.ones(12000)
+            q1 = np.flatnonzero(f > c + bw / 2.0)
+            q2 = np.flatnonzero(f < c - bw / 2.0)
+            q = np.concatenate((q1, q2))
             Aflat[q] = 0
 
             return f, Aflat, Aflat
@@ -1734,11 +1755,11 @@ class merra2Player:
         elif bandopt['name'] == 'custom':
             c = bandopt['v_cen']  # band center[GHz]
             bw = bandopt['frac_bw']  # fractional bandwidth
-            f = arange(0, 1200, 0.1)
-            Aflat = ones(12000)
-            q1 = flatnonzero(f > c + c * bw / 2.0)
-            q2 = flatnonzero(f < c - c * bw / 2.0)
-            q = concatenate((q1, q2))
+            f = np.arange(0, 1200, 0.1)
+            Aflat = np.ones(12000)
+            q1 = np.flatnonzero(f > c + c * bw / 2.0)
+            q2 = np.flatnonzero(f < c - c * bw / 2.0)
+            q = np.concatenate((q1, q2))
             Aflat[q] = 0
 
             return f, Aflat, Aflat
@@ -1751,7 +1772,7 @@ class merra2Player:
         """
 
         # interpolate bandpass onto Tb's frequency axis
-        bandn = interp(freq, fband, band)
+        bandn = np.interp(freq, fband, band)
 
         # take the weighted average
         wint = sum(trj * bandn) / sum(bandn)
@@ -1773,7 +1794,7 @@ class merra2Player:
         try:
             values = heapq.nsmallest(n, items, key=lambda x: abs(x - pivot))
             for val in values:
-                ivalues += [find(items == val)[0]]
+                ivalues.append(np.nonzero(np.ravel(items == val))[0][0])
             return ivalues, values
         except:
             print("failed to find nearest index of single date")
@@ -1784,7 +1805,7 @@ class merra2Player:
         prints the results if single is requested
         """
         dstart = dparser.parse(tstart)
-        inear, t_merra_near = self.index_nearest(array(Tsky_merra['t']), dstart, 2)
+        inear, t_merra_near = self.index_nearest(np.array(Tsky_merra['t']), dstart, 2)
         i0 = inear[0]
         i1 = inear[1]
         print("Requested Tsky at %s" % tstart)
@@ -1842,7 +1863,7 @@ class merra2Player:
         pickleFile = 'Tsky_merra2_output_%s_%s.pickle' % (siteopt['name'], dateInfo)
 
         print("Saving resuls to %s" % (self.webDir + pickleFile))
-        with open(self.webDir + pickleFile, 'w') as f:
+        with open(self.webDir + pickleFile, 'wb') as f:
             pickle.dump([Tsky_merra, opts], f)
 
         return pickleFile
@@ -1924,7 +1945,7 @@ class merra2Player:
 
         """
         print('Plotting results...')
-        ioff()
+        plt.ioff()
         now = opts['now']
         strnow = now.isoformat()
         bandopt = opts['bandopt']
@@ -1942,11 +1963,11 @@ class merra2Player:
             dateInfo,
         )
 
-        figure(figsize=(20, 10))
-        subplot(2, 1, 1)
+        plt.figure(figsize=(20, 10))
+        plt.subplot(2, 1, 1)
         for band in plottedBands:
             if band == 'custom' and 'v_cen' in bandopt.keys():
-                plot(
+                plt.plot(
                     Tsky_merra['t'],
                     Tsky_merra[band],
                     '.-',
@@ -1954,30 +1975,30 @@ class merra2Player:
                     % (bandopt['v_cen'], bandopt['frac_bw']),
                 )
             else:
-                plot(Tsky_merra['t'], Tsky_merra[band], '.-', label=band)
-        legend()
-        grid()
-        ylim(
+                plt.plot(Tsky_merra['t'], Tsky_merra[band], '.-', label=band)
+        plt.legend()
+        plt.grid()
+        plt.ylim(
             [0, max([max(Tsky_merra[band]) for band in plottedBands]) + 2]
         )  # limit the y-axis at 0 and the maximum Tsky + 2.
-        ylabel(r"Brightness Temperature $T_{rj}$ [K]")
-        xlabel("Date")
-        title(
+        plt.ylabel(r"Brightness Temperature $T_{rj}$ [K]")
+        plt.xlabel("Date")
+        plt.title(
             "Rayleigh-Jeans Zenith Brightness Temperature at %s from %s to %s"
             % (siteopt['name'], dateopt['start'], dateopt['end'])
         )
 
-        subplot(2, 1, 2)
-        plot(Tsky_merra['t'], array(Tsky_merra['pwv']) / 1000.0, '.-', label='pwv')
-        grid()
-        ylabel("PWV [mm]")
-        xlabel("Date")
-        title(
+        plt.subplot(2, 1, 2)
+        plt.plot(Tsky_merra['t'], np.array(Tsky_merra['pwv']) / 1000.0, '.-', label='pwv')
+        plt.grid()
+        plt.ylabel("PWV [mm]")
+        plt.xlabel("Date")
+        plt.title(
             "Precipitable Water Vapor at %s from %s to %s"
             % (siteopt['name'], dateopt['start'], dateopt['end'])
         )
-        savefig(tskyPlot)
-        close()
+        plt.savefig(tskyPlot)
+        plt.close()
 
         return tskyPlot
 

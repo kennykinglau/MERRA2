@@ -3,3 +3,7 @@ merra2_products/*
 *.pyc
 python/merra2_products
 python/merra2_timestream.pkl
+.venv/*
+.DS_STORE
+kovac_lab/*
+merra2_products
