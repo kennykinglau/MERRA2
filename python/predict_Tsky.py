@@ -78,7 +78,6 @@ if __name__ == '__main__':
 
     bd = options.bandpass.split(',')
     if len(bd) == 1:
-        print(f"SETTING bandopt['name'] to {bd[0]}")
         bandopt['name'] = bd[0]
     elif len(bd) == 3:
         bandopt['name'] = 'custom'
