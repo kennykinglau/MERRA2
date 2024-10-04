@@ -1,5 +1,8 @@
+# Installing am Atmospheric Model
+Follow [these instructions](https://lweb.cfa.harvard.edu/~spaine/am/download/src/INSTALLING).
+
 # Running merra2Player
-1. Create a [NASA Earthdata](https://urs.earthdata.nasa.gov/home) account
+1. Create a [NASA Earthdata](https://urs.earthdata.nasa.gov/home) account.
 > [!WARNING]  
 > Your password must be stored in plaintext on the computer running
 > merra2Player. Therefore, it is strongly recommended that you choose a new
@@ -29,6 +32,7 @@
 ```sh
 mkdir -p kovac_lab/keck/wvr_products/merra2_analysis/SouthPole
 ln -s kovac_lab/keck/wvr_products/merra2_analysis merra2_products
+ln -s <path to am executable> am
 ```
 8. Run class from Python interpreter inside the python directory
 ```python
