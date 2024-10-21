@@ -1775,7 +1775,7 @@ class merra2Player:
         bandn = np.interp(freq, fband, band)
 
         # take the weighted average
-        wint = sum(trj * bandn) / sum(bandn)
+        wint = np.sum(trj * bandn) / np.sum(bandn)
 
         return wint
 
