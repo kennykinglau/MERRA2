@@ -33,10 +33,9 @@ class merra2Player:
         self.debug = True
         self.verbose = True
         self.defineSite()
-        self.product = 'inst'  # averaged (tavg) or instantaneous (inst)
-        self.checkLinks(product=self.product)
+        self.checkLinks()
 
-    def checkLinks(self, product='inst'):
+    def checkLinks(self):
 
         if not (os.path.islink('merra2_products')):
             print(
@@ -48,14 +47,8 @@ class merra2Player:
             print("Stopping")
             sys.exit()
 
-        if product == 'inst':
-            folder = 'merra2_products'
-            self.webDir = 'kovac_lab/www/merra2_web/web_output_files/'
-        elif product == 'tavg':
-            folder = 'merra2_products_averaged'
-            self.webDir = 'merra2_products_averaged/web_output_files/'
-        else:
-            raise ValueError(f"invalid product: {product}")
+        folder = 'merra2_products'
+        self.webDir = 'kovac_lab/www/merra2_web/web_output_files/'
 
         self.dataDir = '%s/%s/' % (folder, self.site['name'])
         if not os.path.exists(self.dataDir):
@@ -270,7 +263,7 @@ class merra2Player:
                 tipperData[7], tipperData[8], tipperData[9], tipperData[10]
             )  # measured Zenith tipper Tsky
             Tsky_tipper_av, Tsky_tipper_av_sigma = self.averageTipper(
-                t_merra, t_tipper, Tsky_tipper, Tsky_tipper_sigma, product=self.product
+                t_merra, t_tipper, Tsky_tipper, Tsky_tipper_sigma
             )  # measuremd zenith tipper Tsky averaged over merra2 timestamp
             # commented out 22 Aug 2017 by dB. this needs source activate mypyephem. Will fix later.
             # tipper850_interp =  self.resample(t_merra,t_tipper,tsky_merra['tipper850'])
@@ -415,10 +408,9 @@ class merra2Player:
 
         return tipper850_interp
 
-    def averageTipper(self, newdt, dt, Tsky, unc, product='inst', plotFig=False):
+    def averageTipper(self, newdt, dt, Tsky, unc, plotFig=False):
         """
-        input: dt, Tsky, unc from readTipper. product defines the way the tipper is interpolated to 3-hour intervals. inst takes the nearest tipper point and its uncertainty,
-        while aver takes the weighted averaged of all tipper points within the 60 minute range, and a weighted error on the mean. inst is default
+        input: dt, Tsky, unc from readTipper.
         newdt is a datetime array of merra2 times (3hour interval)
         tipper data is collected every 12.75 minutes, merra2 every3 hours so we average ~14 tipper points to get 1.
         option to plot the original data alongside the averaged data is available.
@@ -429,54 +421,30 @@ class merra2Player:
         tipper_m = []
         tipper_s = []
 
-        if product == 'inst':
-            for i in newdt:
-                # for every data point of the 3 hour MERRA2 data, find the nearest datetime in the Chajnantor data.
-                # average the data from the 3 hour period centered around it
-                # try-except is for edge cases when there isn't data on one side.
-                # this is more or less wrong, because we don't always have data every 12.75 minutes.
-                closest, value = self.index_nearest(dt, i, 1)
-                try:
-                    closest = closest[0]
-                except:
-                    print(value)
-                    tipper_m.append(float("nan"))
-                    tipper_s.append(float("nan"))
-                    continue
+        for i in newdt:
+            # for every data point of the 3 hour MERRA2 data, find the nearest datetime in the Chajnantor data.
+            # average the data from the 3 hour period centered around it
+            # try-except is for edge cases when there isn't data on one side.
+            # this is more or less wrong, because we don't always have data every 12.75 minutes.
+            closest, value = self.index_nearest(dt, i, 1)
+            try:
+                closest = closest[0]
+            except:
+                print(value)
+                tipper_m.append(float("nan"))
+                tipper_s.append(float("nan"))
+                continue
 
-                # deal with gaps in tipper data by setting them as NaN if the distance between nearest point is too far.
-                interval = abs(dt[closest] - i)
-                if interval > datetime.timedelta(minutes=20):
-                    tipper_m.append(float("nan"))
-                    tipper_s.append(float("nan"))
-                else:
-                    tipper_m.append(
-                        Tsky[closest]
-                    )  # take the closest Tsky and uncertainty, for a time that must be within 20 minutes.
-                    tipper_s.append(unc[closest])
-
-        elif product == 'tavg':
-            for i in newdt:
-                # for every data point of the 3 hour MERRA2 data, find the nearest datetime in the Chajnantor data.
-                # average the data from the 2 hour period centered around it
-                closePoints = (dt > i - datetime.timedelta(hours=1)) & (
-                    dt < i + datetime.timedelta(hours=1)
-                )
-
-                # deal with gaps in tipper data by setting them as NaN if the distance between nearest point is too far.
-                if sum(closePoints) == 0:
-                    tipper_m.append(float("nan"))
-                    tipper_s.append(float("nan"))
-                else:
-                    weights = (1 / unc[closePoints]) ** 2
-                    average = np.average(Tsky[closePoints], weights=weights)
-                    # variance = 1/np.average()
-                    tipper_m.append(
-                        average
-                    )  # weighted average of Tsky. ##TODO: make it so that you actually average the 60 minutes within.
-                    tipper_s.append(0)  # weighted error on the mean.
-        else:
-            raise ValueError("invalid product name. choose inst or aver.")
+            # deal with gaps in tipper data by setting them as NaN if the distance between nearest point is too far.
+            interval = abs(dt[closest] - i)
+            if interval > datetime.timedelta(minutes=20):
+                tipper_m.append(float("nan"))
+                tipper_s.append(float("nan"))
+            else:
+                tipper_m.append(
+                    Tsky[closest]
+                )  # take the closest Tsky and uncertainty, for a time that must be within 20 minutes.
+                tipper_s.append(unc[closest])
 
         if plotFig:
             allData = plt.scatter(dt, Tsky, label="all data, every 12.75 minutes")
@@ -755,14 +723,9 @@ class merra2Player:
             streamN = '100'
 
         if dataset == "multiLevel":
-            if self.product == 'inst':
-                shortname = 'M2I3NPASM'
-                filenameBase = 'data/MERRA2/M2I3NPASM.5.12.4'
-                filename = 'MERRA2_%s.inst3_3d_asm_Np.%s.nc4' % (streamN, date)
-            elif self.product == 'tavg':
-                shortname = 'M2T3NVASM'
-                filenameBase = 'data/MERRA2/M2T3NVASM.5.12.4'
-                filename = 'MERRA2_%s.tavg3_3d_asm_Nv.%s.nc4' % (streamN, date)
+            shortname = 'M2I3NPASM'
+            filenameBase = 'data/MERRA2/M2I3NPASM.5.12.4'
+            filename = 'MERRA2_%s.inst3_3d_asm_Np.%s.nc4' % (streamN, date)
             format = (
                 '&FORMAT=bmM0Lw&BBOX=%2.1f,%2.3f,%2.1f,%2.3f&LABEL=svc_%s&FLAGS=&SHORTNAME=%s&SERVICE=SUBSET_MERRA2&LAYERS=&VERSION=1.02&VARIABLES=t,ps,qv,o3,h,ql,qi'
                 % (lat0, long0, lat1, long1, filename, shortname)
@@ -770,14 +733,9 @@ class merra2Player:
             hostname = self.get_host_name(dataset)
 
         elif dataset == "singleLevel":
-            if self.product == 'inst':
-                shortname = 'M2I1NXASM'
-                filenameBase = 'data/MERRA2/M2I1NXASM.5.12.4'
-                filename = 'MERRA2_%s.inst1_2d_asm_Nx.%s.nc4' % (streamN, date)
-            elif self.product == 'tavg':
-                shortname = 'M2T1NXSLV'
-                filenameBase = 'data/MERRA2/M2T1NXSLV.5.12.4'
-                filename = 'MERRA2_%s.tavg1_2d_slv_Nx.%s.nc4' % (streamN, date)
+            shortname = 'M2I1NXASM'
+            filenameBase = 'data/MERRA2/M2I1NXASM.5.12.4'
+            filename = 'MERRA2_%s.inst1_2d_asm_Nx.%s.nc4' % (streamN, date)
             format = (
                 '&FORMAT=bmM0Lw&BBOX=%2.1f,%2.3f,%2.1f,%2.3f&LABEL=%s&FLAGS=&SHORTNAME=%s&SERVICE=SUBSET_MERRA2&LAYERS=&VERSION=1.02&VARIABLES=ps,qv2m,t2m,tqi,tql,tqv'
                 % (lat0, long0, lat1, long1, filename, shortname)
@@ -1583,29 +1541,9 @@ class merra2Player:
                 "am parameters: f0: %.2f %s, "
                 "f1: %.2f %s,  df: %.2f %s, "
                 "za: %2.2f %s, h2o_scale=%2.2f"
-                % (
-                    pars[0],
-                    pars[1],
-                    pars[2],
-                    pars[3],
-                    pars[4],
-                    pars[5],
-                    pars[6],
-                    pars[7],
-                    pars[8],
-                )
+                % tuple(pars[:9])
             )
-        cmd += "%.2f %s %.2f %s %.2f %s %.2f %s %.2f" % (
-            pars[0],
-            pars[1],
-            pars[2],
-            pars[3],
-            pars[4],
-            pars[5],
-            pars[6],
-            pars[7],
-            pars[8],
-        )
+        cmd += "%.2f %s %.2f %s %.2f %s %.2f %s %.2f" % tuple(pars[:9])
 
         cmd += ' >%s%s ' % (self.amcDir, outfn)
         cmd += ' 2>%s%s ' % (self.amcDir, errfn)
