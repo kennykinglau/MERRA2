@@ -183,25 +183,23 @@ class merra2Player:
             'EHT_hi',
             'EHT_lo',
         ]
-        tsky = {}
-        for k in keys:
-            tsky[k] = []
-        # f270, band270f, band270rj = self.readBandpass(bandopt={'name': 'BK270'})
-        # f220, band220f, band220rj = self.readBandpass(bandopt={'name': 'BK220'})
-        # f210, band210f, band210rj = self.readBandpass(bandopt={'name': 'BK210'})
-        # f150, band150f, band150rj = self.readBandpass(bandopt={'name': 'BK150'})
-        # f100, band100f, band100rj = self.readBandpass(bandopt={'name': 'BK95'})
-        # f30, band30f, band30rj = self.readBandpass(bandopt={'name': 'BK30'})
-        # f31, band31f, band31rj = self.readBandpass(bandopt={'name': 'BK31'})
-        # f40, band40f, band40rj = self.readBandpass(bandopt={'name': 'BK40'})
-        # f41, band41f, band41rj = self.readBandpass(bandopt={'name': 'BK41'})
-        # f850, band850f, band850rj = self.readBandpass(bandopt={'name': 'tipper850'})
-        # feht, bandeht_hi, bandeht_hi = self.readBandpass(bandopt={'name': 'EHT_hi'})
-        # feht, bandeht_lo, bandeht_lo = self.readBandpass(bandopt={'name': 'EHT_lo'})
+        tsky = {key: [] for key in keys}
+        f270, band270f, band270rj = self.readBandpass(bandopt={'name': 'BK270'})
+        f220, band220f, band220rj = self.readBandpass(bandopt={'name': 'BK220'})
+        f210, band210f, band210rj = self.readBandpass(bandopt={'name': 'BK210'})
+        f150, band150f, band150rj = self.readBandpass(bandopt={'name': 'BK150'})
+        f100, band100f, band100rj = self.readBandpass(bandopt={'name': 'BK95'})
+        f30, band30f, band30rj = self.readBandpass(bandopt={'name': 'BK30'})
+        f31, band31f, band31rj = self.readBandpass(bandopt={'name': 'BK31'})
+        f40, band40f, band40rj = self.readBandpass(bandopt={'name': 'BK40'})
+        f41, band41f, band41rj = self.readBandpass(bandopt={'name': 'BK41'})
+        f850, band850f, band850rj = self.readBandpass(bandopt={'name': 'tipper850'})
+        feht, bandeht_hi, bandeht_hi = self.readBandpass(bandopt={'name': 'EHT_hi'})
+        feht, bandeht_lo, bandeht_lo = self.readBandpass(bandopt={'name': 'EHT_lo'})
 
-        # if bandopt['name'] == 'custom':
-        #     fc, bandcf, bandcrj = self.readBandpass('custom')
-        #     tsky['custom'] = []
+        if bandopt['name'] == 'custom':
+            fc, bandcf, bandcrj = self.readBandpass('custom')
+            tsky['custom'] = []
 
         for date in dateList:
             amcFileList = self.checkAmcFileForDate(date)
@@ -217,31 +215,28 @@ class merra2Player:
             for amcFile in amcFileList:
                 dat = self.getDatetimeFromAmcFile(amcFile)
                 tsky['t'].append(dat)
-                try:
-                    fs, tb, trj, pwv, tau = self.run_am(
-                        amcFile, f0=0.0, f1=1200.0, df=1000.0
-                    )
-                    tsky['pwv'].append(pwv)
-                    # tsky['BK30'].append(self.integBand(f30, band30rj, fs, trj))
-                    # tsky['BK31'].append(self.integBand(f31, band31rj, fs, trj))
-                    # tsky['BK40'].append(self.integBand(f40, band40rj, fs, trj))
-                    # tsky['BK41'].append(self.integBand(f41, band41rj, fs, trj))
-                    # tsky['BK100'].append(self.integBand(f100, band100rj, fs, trj))
-                    # tsky['BK150'].append(self.integBand(f150, band150rj, fs, trj))
-                    # tsky['BK210'].append(self.integBand(f210, band210rj, fs, trj))
-                    # tsky['BK220'].append(self.integBand(f220, band220rj, fs, trj))
-                    # tsky['BK270'].append(self.integBand(f270, band270rj, fs, trj))
-                    # tsky['tipper850'].append(
-                    #     self.integBand(f850, band850rj, fs, tb)
-                    # )  # Note: Integrate tb because its a volume-based Planck law rather than a 1d.
-                    # tsky['EHT_hi'].append(self.integBand(feht, bandeht_hi, fs, trj))
-                    # tsky['EHT_lo'].append(self.integBand(feht, bandeht_lo, fs, trj))
-                    # if bandopt['name'] == 'custom':
-                    #     tsky['custom'].append(self.integBand(fc, bandcrj, fs, trj))
-                    # integratedTx = self.integBand(f850, band850rj, fs, np.exp(-tau))
-                    # tsky['tau850'].append(-np.log(integratedTx))
-                except:
-                    pass
+                fs, tb, trj, pwv, tau = self.run_am(
+                    amcFile, f0=0.0, f1=1200.0, df=1000.0
+                )
+                tsky['pwv'].append(pwv)
+                tsky['BK30'].append(self.integBand(f30, band30rj, fs, trj))
+                tsky['BK31'].append(self.integBand(f31, band31rj, fs, trj))
+                tsky['BK40'].append(self.integBand(f40, band40rj, fs, trj))
+                tsky['BK41'].append(self.integBand(f41, band41rj, fs, trj))
+                tsky['BK100'].append(self.integBand(f100, band100rj, fs, trj))
+                tsky['BK150'].append(self.integBand(f150, band150rj, fs, trj))
+                tsky['BK210'].append(self.integBand(f210, band210rj, fs, trj))
+                tsky['BK220'].append(self.integBand(f220, band220rj, fs, trj))
+                tsky['BK270'].append(self.integBand(f270, band270rj, fs, trj))
+                tsky['tipper850'].append(
+                    self.integBand(f850, band850rj, fs, tb)
+                )  # Note: Integrate tb because its a volume-based Planck law rather than a 1d.
+                tsky['EHT_hi'].append(self.integBand(feht, bandeht_hi, fs, trj))
+                tsky['EHT_lo'].append(self.integBand(feht, bandeht_lo, fs, trj))
+                if bandopt['name'] == 'custom':
+                    tsky['custom'].append(self.integBand(fc, bandcrj, fs, trj))
+                integratedTx = self.integBand(f850, band850rj, fs, np.exp(-tau))
+                tsky['tau850'].append(-np.log(integratedTx))
 
         datestr_list = [d.strftime('%Y-%m-%d T%H:%M:%S') for d in tsky['t']]
         tsky['tstr'] = datestr_list
