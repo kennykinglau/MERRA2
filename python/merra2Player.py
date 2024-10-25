@@ -1558,27 +1558,28 @@ class merra2Player:
             Pbase = []
             Tbase = []
 
-            inErrFile = open(self.amcDir + outfn.replace('.out', '.err'), 'r')
-            for line in inErrFile:
-                if line.startswith('output'):
-                    outfmt = line.split()[1::2]
-                if line.startswith('Pbase'):
-                    Pbase.append(float(line.split()[1]))
-                if line.startswith('Tbase'):
-                    Tbase.append(float(line.split()[1]))
-                if line[0] == '#' and 'dry_air' in line:
-                    dry_air = float(line.split()[2])
-                if line[0] == '#' and 'h2o' in line:
-                    pwv = float(next(inErrFile).split()[1][1:])
-                if line[0] == '#' and 'o3' in line:
-                    o3 = float(line.split()[2])
+            with open(self.amcDir + outfn.replace('.out', '.err'), 'r') as inErrFile:
+                for line in inErrFile:
+                    if line.startswith('output'):
+                        outfmt = [name for name, unit in (header.split(' ') for header in line.split('  ')[1:])]
+                    if line.startswith('Pbase'):
+                        Pbase.append(float(line.split()[1]))
+                    if line.startswith('Tbase'):
+                        Tbase.append(float(line.split()[1]))
+                    if line[0] == '#' and 'dry_air' in line:
+                        dry_air = float(line.split()[2])
+                    if line[0] == '#' and 'h2o' in line:
+                        pwv = float(next(inErrFile).split()[1][1:])
+                    if line[0] == '#' and 'o3' in line:
+                        o3 = float(line.split()[2])
             Tgnd = Tbase[-1]
             Pgnd = Pbase[-1]
 
             amOut = np.genfromtxt(self.amcDir + outfn, delimiter='', names=outfmt)
 
-        except:
+        except Exception as e:
             print("ERROR: could not read file output spectra for %s" % outfn)
+            print(e)
 
         return amOut, pwv, dry_air, o3, Tgnd, Pgnd
 
