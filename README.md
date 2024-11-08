@@ -44,7 +44,7 @@ scp -r "nerivera@login.rc.fas.harvard.edu:/n/holylfs04/LABS/kovac_lab/unified/au
 ```
 This is required for using `predict_Tsky.py` at the moment, but that may change.
 
-You're now ready to run merra2Player, which can be done in a few ways.
+**You're now ready to run merra2Player, which can be done in a few ways.**
 
 - `predict_Tsky.py`
 
