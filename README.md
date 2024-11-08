@@ -34,6 +34,15 @@ mkdir -p kovac_lab/keck/wvr_products/merra2_analysis
 ln -s kovac_lab/keck/wvr_products/merra2_analysis merra2_products
 ln -s <path to am executable> am
 ```
+8. Optional: Set up bandpass files
+```sh
+mkdir -p kovac_lab/keck/keck_aux_data/bandpass
+scp -r "<Cannon username>@login.rc.fas.harvard.edu:/n/holylfs04/LABS/kovac_lab/unified/aux_data/B2/bandpass/*.txt" ./kovac_lab/keck/keck_aux_data/bandpass/
+scp -r "nerivera@login.rc.fas.harvard.edu:/n/holylfs04/LABS/kovac_lab/unified/aux_data/B3/bandpass/*.txt" ./kovac_lab/keck/keck_aux_data/bandpass/
+scp -r "nerivera@login.rc.fas.harvard.edu:/n/holylfs04/LABS/kovac_lab/unified/aux_data/BA/bandpass/*.txt" ./kovac_lab/keck/keck_aux_data/bandpass/
+scp -r "nerivera@login.rc.fas.harvard.edu:/n/holylfs04/LABS/kovac_lab/unified/aux_data/KA/bandpass/*.txt" ./kovac_lab/keck/keck_aux_data/bandpass/
+```
+This is required for using `predict_Tsky.py` at the moment, but that may change.
 
 You're now ready to run merra2Player, which can be done in a few ways.
 
