@@ -28,12 +28,10 @@ Follow [these instructions](https://lweb.cfa.harvard.edu/~spaine/am/download/src
 7. Set up directories
 > [!NOTE]
 > This step should be done from the `python` directory and may not be necessary
-> from within the Harvard CANNON environment.
+> from within the Harvard FAS RC Cannon Cluster.
 ```sh
 mkdir -p kovac_lab/keck/wvr_products/merra2_analysis
 ln -s kovac_lab/keck/wvr_products/merra2_analysis merra2_products
-mkdir merra2_products/merra2_raw_data
-mkdir merra2_products/tipper_raw_data
 ln -s <path to am executable> am
 ```
 
@@ -68,7 +66,7 @@ is more likely the further away the coordinates are from one of the named sites.
 
 ```sh
 # Succeeds as of November, 2024. Interpolation works due to proximity to SouthPole.
-./predict_Tsky.py -l SouthPoleCoordinates,SouthPoleCoordinates,-89,0,2835 -d "20230501, 20230503"
+./predict_Tsky.py -l CloseToSouthPole,CloseToSouthPole,-89,0,2835 -d "20230501, 20230503"
 # Fails as of November, 2024 (volume mixing ratio out of range). Not close to any named sites.
 ./predict_Tsky.py -l KittPeak,KittPeak,31.9583,-111.5967,2096 -d "20230501, 20230503"
 ```
