@@ -51,20 +51,14 @@ class merra2Player:
         self.webDir = 'kovac_lab/www/merra2_web/web_output_files/'
 
         self.dataDir = '%s/%s/' % (folder, self.site['name'])
-        if not os.path.exists(self.dataDir):
-            os.system('mkdir %s/%s' % (folder, self.site['name']))
-        self.merraDir = self.dataDir + 'merra2_raw_data/'
-        if not os.path.exists(self.merraDir):
-            os.system('mkdir %s/%s/merra2_raw_data/' % (folder, self.site['name']))
-        self.tipperDir = self.dataDir + 'tipper_raw_data/'
-        if not os.path.exists(self.tipperDir):
-            os.system('mkdir %s/%s/tipper_raw_data/' % (folder, self.site['name']))
+        self.merraDir = folder + '/merra2_raw_data/'
+        self.tipperDir = folder + '/tipper_raw_data/'
         self.amcDir = self.dataDir + 'amcFiles/'
-        if not os.path.exists(self.amcDir):
-            os.system('mkdir %s/%s/amcFiles/' % (folder, self.site['name']))
         self.finalDir = self.dataDir + 'final/'
-        if not os.path.exists(self.finalDir):
-            os.system('mkdir %s/%s/final/' % (folder, self.site['name']))
+        
+        for dir_ in [self.dataDir, self.merraDir, self.tipperDir, self.amcDir, self.finalDir]:
+            if not os.path.exists(dir_):
+                os.system('mkdir %s' % dir_)
 
         if not (os.path.islink('am')):
             print(
