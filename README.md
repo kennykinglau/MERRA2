@@ -1,7 +1,4 @@
-# Installing am Atmospheric Model
-Follow [these instructions](https://lweb.cfa.harvard.edu/~spaine/am/download/src/INSTALLING).
-
-# Running `merra2Player`
+# Setting up `merra2Player`
 1. Create a [NASA Earthdata](https://urs.earthdata.nasa.gov/home) account.
 > [!WARNING]  
 > Your password must be stored in plaintext on the computer running
@@ -21,11 +18,13 @@ Follow [these instructions](https://lweb.cfa.harvard.edu/~spaine/am/download/src
 > [Wget from Homebrew](https://formulae.brew.sh/formula/wget). You can find
 > other installation methods
 > [here](http://wget.addictivecode.org/FrequentlyAskedQuestions.html#download).
-4. Follow [these steps](https://disc.gsfc.nasa.gov/information/howto?title=How%20to%20Generate%20Earthdata%20Prerequisite%20Files)
-   to generate Earthdata prerequisite files.
+4. Generate Earthdata prerequisite files by following
+   [these instructions](https://disc.gsfc.nasa.gov/information/howto?title=How%20to%20Generate%20Earthdata%20Prerequisite%20Files).
 5. [Create](https://docs.python.org/3/library/venv.html#creating-virtual-environments) and [activate](https://docs.python.org/3/library/venv.html#how-venvs-work) a virtual environment with venv.
 6. Install requirements with `pip install -r merra2_requirements.txt`
-7. Set up directories
+7. Install [am Atmospheric Model](https://lweb.cfa.harvard.edu/~spaine/am/) by
+   following [these instructions](https://lweb.cfa.harvard.edu/~spaine/am/download/src/INSTALLING).
+8. Set up directories and symlinks
 > [!NOTE]
 > This step should be done from the `python` directory and may not be necessary
 > from within the Harvard FAS RC Cannon Cluster.
@@ -34,7 +33,7 @@ mkdir -p kovac_lab/keck/wvr_products/merra2_analysis
 ln -s kovac_lab/keck/wvr_products/merra2_analysis merra2_products
 ln -s <path to am executable> am
 ```
-8. Optional: Set up bandpass files
+9. Optional: Set up bandpass files
 ```sh
 mkdir -p kovac_lab/keck/keck_aux_data/bandpass
 scp -r "<Cannon username>@login.rc.fas.harvard.edu:/n/holylfs04/LABS/kovac_lab/unified/aux_data/B2/bandpass/*.txt" ./kovac_lab/keck/keck_aux_data/bandpass/
@@ -44,7 +43,7 @@ scp -r "nerivera@login.rc.fas.harvard.edu:/n/holylfs04/LABS/kovac_lab/unified/au
 ```
 This is required for using `predict_Tsky.py` at the moment, but that may change.
 
-**You're now ready to run merra2Player, which can be done in a few ways.**
+# Running `merra2Player`
 
 - `predict_Tsky.py`
 
