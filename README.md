@@ -44,6 +44,7 @@ scp -r "<Cannon username>@login.rc.fas.harvard.edu:/n/holylfs04/LABS/kovac_lab/u
 scp -r "nerivera@login.rc.fas.harvard.edu:/n/holylfs04/LABS/kovac_lab/unified/aux_data/B3/bandpass/*.txt" ./kovac_lab/keck/keck_aux_data/bandpass/
 scp -r "nerivera@login.rc.fas.harvard.edu:/n/holylfs04/LABS/kovac_lab/unified/aux_data/BA/bandpass/*.txt" ./kovac_lab/keck/keck_aux_data/bandpass/
 scp -r "nerivera@login.rc.fas.harvard.edu:/n/holylfs04/LABS/kovac_lab/unified/aux_data/KA/bandpass/*.txt" ./kovac_lab/keck/keck_aux_data/bandpass/
+ln -s kovac_lab/keck/keck_aux_data merra2_products/keck_aux_data
 ```
 This is required for using `predict_Tsky.py` at the moment, but that may change.
 

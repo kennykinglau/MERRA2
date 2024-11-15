@@ -69,7 +69,7 @@ class merra2Player:
 
         self.webDir = 'kovac_lab/www/merra2_web/web_output_files/'
         self.wxDir = '%s/wx_data/' % folder  # independent of holylfs directory
-        self.auxDataDir = 'kovac_lab/keck/keck_aux_data/bandpass/'
+        self.auxDataDir = '%s/keck_aux_data/bandpass/' % folder
 
     def defineSite(self, site=None):
         """
