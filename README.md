@@ -24,6 +24,10 @@
 6. Install requirements with `pip install -r merra2_requirements.txt`
 7. Install [am Atmospheric Model](https://lweb.cfa.harvard.edu/~spaine/am/) by
    following [these instructions](https://lweb.cfa.harvard.edu/~spaine/am/download/src/INSTALLING).
+> [!TIP]
+> If you're using macOS and installed a real version of `gcc`, you should make
+> sure that the `COMPILER_GCC` variable in the `Makefile` corresponds to the
+> real version of `gcc` before running `make am`.
 8. Set up directories and symlinks
 > [!NOTE]
 > This step should be done from the `python` directory and may not be necessary
