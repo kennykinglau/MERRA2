@@ -2,6 +2,7 @@
 
 import argparse
 import datetime
+import time
 import os
 
 if __name__ == '__main__':
@@ -66,7 +67,9 @@ if __name__ == '__main__':
 
     options = parser.parse_args()
 
-    now = datetime.datetime.now()
+    start_datetime = datetime.datetime.now()
+    start_time_process = time.process_time_ns()
+    start_time_total = time.perf_counter_ns()
     import merra2Player as m2p
 
     m = m2p.merra2Player()
@@ -134,13 +137,17 @@ if __name__ == '__main__':
     print(dateopt, siteopt, bandopt)
     # Links and directory names have to be defined first as they are used throughout
     m.checkLinks()
+    pre_run_time_process = time.process_time_ns()
+    pre_run_time_total = time.perf_counter_ns()
     Tsky_merra = m.runMERRA(dateopt=dateopt, bandopt=bandopt)
     if siteopt['type'] == 'presel':
         Tsky_merra = m.runTipper(Tsky_merra, dateopt)
+    post_run_time_process = time.process_time_ns()
+    post_run_time_total = time.perf_counter_ns()
 
     opts = {}
     opts['web'] = False
-    opts['now'] = now
+    opts['now'] = start_datetime
     opts['bandopt'] = bandopt
     opts['siteopt'] = siteopt
     opts['dateopt'] = dateopt
@@ -158,9 +165,35 @@ if __name__ == '__main__':
         tskyPlot = m.save2plot(Tsky_merra, opts)
         os.system('eog %s' % tskyPlot)
 
+    end_time_total = time.perf_counter_ns()
+    end_time_process = time.process_time_ns()
+    end_datetime = datetime.datetime.now()
     print(
-        "Total time: %.2f seconds" % ((datetime.datetime.now() - now).total_seconds())
+        "Total time seconds (datetime, not very precise): %.2f" % (end_datetime - start_datetime).total_seconds()
     )
+    print(
+        "Total time seconds (perf_counter, precise): %.5f\n"
+        "  Initialization: %.5f\n"
+        "  Running (generating amcFiles): %.5f\n"
+        "  Saving (generating final): %.5f" % (
+            (end_time_total - start_time_total) * 1e-9,
+            (pre_run_time_total - start_time_total) * 1e-9,
+            (post_run_time_total - pre_run_time_total) * 1e-9,
+            (end_time_total - post_run_time_total) * 1e-9
+        )
+    )
+    print(
+        "Process time seconds: %.5f\n"
+        "  Initialization: %.5f\n"
+        "  Running (generating amcFiles): %.5f\n"
+        "  Saving (generating final): %.5f" % (
+            (end_time_process - start_time_process) * 1e-9,
+            (pre_run_time_process - start_time_process) * 1e-9,
+            (post_run_time_process - pre_run_time_process) * 1e-9,
+            (end_time_process - post_run_time_process) * 1e-9
+        )
+    )
+
 
     # TODO add unit tests
     # predict_Tsky.py -l SouthPole -d 20170801
