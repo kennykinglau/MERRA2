@@ -53,7 +53,7 @@ This is required for using `predict_Tsky.py` at the moment, but that may change.
 
 # Running `merra2Player`
 
-- `predict_Tsky.py`
+## `predict_Tsky.py`
 
 `predict_Tsky.py` is a command-line tool that drives `merra2Player`. It must be
 run from within the `python` directory.
@@ -87,7 +87,7 @@ is more likely the further away the coordinates are from one of the named sites.
 ./predict_Tsky.py -l KittPeak,KittPeak,31.9583,-111.5967,2096 -d "20230501, 20230503"
 ```
 
-- Python interpreter
+## Python interpreter
 
 Start a Python interpreter from within the `python` directory. You should be
 able to import the class and call its methods directly, like in the below
