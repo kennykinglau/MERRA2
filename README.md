@@ -21,6 +21,9 @@
 4. Generate Earthdata prerequisite files by following
    [these instructions](https://disc.gsfc.nasa.gov/information/howto?title=How%20to%20Generate%20Earthdata%20Prerequisite%20Files).
 5. [Create](https://docs.python.org/3/library/venv.html#creating-virtual-environments) and [activate](https://docs.python.org/3/library/venv.html#how-venvs-work) a virtual environment with venv.
+> [!TIP]
+> After activating the environment for the first time, you can upgrade pip by
+> running `pip install -U pip`
 6. Install requirements with `pip install -r merra2_requirements.txt`
 7. Install [am Atmospheric Model](https://lweb.cfa.harvard.edu/~spaine/am/) by
    following [these instructions](https://lweb.cfa.harvard.edu/~spaine/am/download/src/INSTALLING).
