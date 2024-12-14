@@ -65,6 +65,14 @@ if __name__ == '__main__':
         help="-s. Default=True, Forces the output of a run to be saved in a csv and pickle file",
     )
 
+    parser.add_argument(
+        "-o",
+        dest="download",
+        action="store_false",
+        default=True,
+        help="-o. Runs merra2Player offline, preventing it from downloading any data (recommended for Cannon).",
+    )
+
     options = parser.parse_args()
 
     start_datetime = datetime.datetime.now()
@@ -72,7 +80,7 @@ if __name__ == '__main__':
     start_time_total = time.perf_counter_ns()
     import merra2Player as m2p
 
-    m = m2p.merra2Player()
+    m = m2p.merra2Player(download=options.download)
 
     # Option parsing
     bandopt = {}
@@ -111,7 +119,7 @@ if __name__ == '__main__':
         siteopt['cldtype'] = 'icewater'
     siteopt['groundData'] = options.groundData
 
-    dt = options.dateopt.split(',')
+    dt = [d.strip() for d in options.dateopt.split(',')]
     if len(dt) == 1:
         if len(dt[0]) == 4:
             dateopt['type'] = 'datelist'

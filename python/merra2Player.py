@@ -22,8 +22,9 @@ class merra2Player:
     class to download merra2 data and generate am profiles from it
     """
 
-    def __init__(self):
+    def __init__(self, download=True):
         """
+        If download is False, downloading data will be disabled (recommended for use on Cannon)
 
         TODO: reduce the time to run am even further
         by checking on the changes of the integrated band
@@ -32,6 +33,7 @@ class merra2Player:
         self.version = 1.0
         self.debug = True
         self.verbose = True
+        self.download = download
         self.defineSite()
         self.checkLinks()
 
@@ -759,12 +761,15 @@ class merra2Player:
                 print(
                     self.merraDir
                     + filename
-                    + "  was corrupted at download, re-download ... "
+                    + "  was corrupted at download"
                 )
             else:
                 print(self.merraDir + filename + "  already exists, skipping...  ")
                 return 1
-
+        if not self.download:
+            print("Downloading is disabled, failed to get " + filename)
+            return 0
+        
         print('Trying to download %s' % url)
         # get current directory, so that we can go back after moving the file
         currDir = os.getcwd()
@@ -793,6 +798,7 @@ class merra2Player:
         os.system('mv %s %s' % (filename, currDir + '/' + self.merraDir + filename))
         # return to initial directory
         os.chdir(currDir)
+        return 1
 
     def retrieve_merra2_data_for_dateRange(
         self, dateStart, dateEnd=None, dataset="multiLevel"
@@ -810,9 +816,10 @@ class merra2Player:
 
         dt = dend - dstart
         count = dt.days + 1
-        dateList = list(rr.rrule(rr.DAILY, dstart, count=count))
+        fullDateList = list(rr.rrule(rr.DAILY, dstart, count=count))
+        dateList = []
 
-        for dat in dateList:
+        for dat in fullDateList:
             if self.verbose:
                 print(dat)
             # quick patch for the problem of overloading MERRA2 servers with requests
@@ -830,12 +837,12 @@ class merra2Player:
             #    ret1 = self.retrieve_merra2_data_for_date(
             #        dat.strftime('%Y%m%d'), "singleLevel"
             #    )
-            if (ret0 == 0) or (ret1 == 0):
-                dateList.pop(-1)
+            if ret0 != 0 and ret1 != 0:
+                dateList.append(dat)
 
         print(
             "Summary: Start: %s, End: %s : %d files available, last: %s"
-            % (dateStart, dateEnd, np.size(dateList), dateList[-1])
+            % (dateStart, dateEnd, len(dateList), dateList[-1] if dateList else "N/A")
         )
 
         return dateList
