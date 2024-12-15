@@ -147,7 +147,7 @@ if __name__ == '__main__':
     m.checkLinks()
     pre_run_time_process = time.process_time_ns()
     pre_run_time_total = time.perf_counter_ns()
-    Tsky_merra = m.runMERRA(dateopt=dateopt, bandopt=bandopt)
+    flat_Tsky_merra, Tsky_merra = m.runMERRA(dateopt=dateopt, bandopt=bandopt)
     if siteopt['type'] == 'presel':
         Tsky_merra = m.runTipper(Tsky_merra, dateopt)
     post_run_time_process = time.process_time_ns()
@@ -164,8 +164,10 @@ if __name__ == '__main__':
         m.printSingle(dateopt['start'], Tsky_merra)
     else:
         if options.saveResults:
-            csvFile = m.save2csv(Tsky_merra, opts)
-            pickleFile = m.save2pickle(Tsky_merra, opts)
+            m.save2csv(flat_Tsky_merra, opts, flat=True)
+            m.save2csv(Tsky_merra, opts)
+            m.save2pickle(flat_Tsky_merra, opts, flat=True)
+            m.save2pickle(Tsky_merra, opts)
         else:
             print("Results not saved to any file")
 

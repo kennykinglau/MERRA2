@@ -155,6 +155,12 @@ class merra2Player:
         siteopt options are already defined in self.site
         bandopt: by default, compute all BK and tipper bands. If bandopt['name']='custom'
         compute also that custom band
+        Returns a tuple where the first element is the dictionary of averaged temperatures
+        (flat bandpass, key called "flat") and the second is the dictionary mapping band
+        name to temperature list integrated over that bandpass.
+        Both dictionaries also contain a t key with datetime objects, a tstr key
+        with string versions of those datetimes, and a pwv key with precipitable
+        water vapor.
         """
         dateList = self.retrieve_merra2_data_for_dateRange(
             dateopt['start'], dateopt['end']
@@ -180,6 +186,7 @@ class merra2Player:
             'EHT_lo',
         ]
         tsky = {key: [] for key in keys}
+        flat_tsky = {key: [] for key in ['t', 'pwv', 'flat']}
         f270, band270f, band270rj = self.readBandpass(bandopt={'name': 'BK270'})
         f220, band220f, band220rj = self.readBandpass(bandopt={'name': 'BK220'})
         f210, band210f, band210rj = self.readBandpass(bandopt={'name': 'BK210'})
@@ -211,10 +218,13 @@ class merra2Player:
             for amcFile in amcFileList:
                 dat = self.getDatetimeFromAmcFile(amcFile)
                 tsky['t'].append(dat)
+                flat_tsky['t'].append(dat)
                 fs, tb, trj, pwv, tau = self.run_am(
                     amcFile, f0=0.0, f1=1200.0, df=1000.0
                 )
                 tsky['pwv'].append(pwv)
+                flat_tsky['pwv'].append(pwv)
+                flat_tsky['flat'].append(np.average(trj))
                 tsky['BK30'].append(self.integBand(f30, band30rj, fs, trj))
                 tsky['BK31'].append(self.integBand(f31, band31rj, fs, trj))
                 tsky['BK40'].append(self.integBand(f40, band40rj, fs, trj))
@@ -236,8 +246,9 @@ class merra2Player:
 
         datestr_list = [d.strftime('%Y-%m-%d T%H:%M:%S') for d in tsky['t']]
         tsky['tstr'] = datestr_list
+        flat_tsky['tstr'] = datestr_list.copy()
 
-        return tsky
+        return flat_tsky, {key: vals for key, vals in tsky.items() if None not in vals}
 
     def runTipper(self, tsky_merra, dateopt={'start': '20150123', 'end': '20150123'}):
         """
@@ -1652,7 +1663,10 @@ class merra2Player:
             else:
                 print("bandName must be 'BK30', 'BK31', 'BK40', 'BK41', 'BK95', 'BK150', 'BK210', 'BK220', or 'BK270'")
                 return 0
-            e = np.genfromtxt(self.auxDataDir + filename, delimiter=',', comments='#')
+            try:
+                e = np.genfromtxt(self.auxDataDir + filename, delimiter=',', comments='#')
+            except FileNotFoundError:
+                return None, None, None
             f = e[:, 0]
             if np.shape(e)[1] == 3:
                 Aflat = e[:, 1]
@@ -1705,6 +1719,8 @@ class merra2Player:
         fband, band: frequency axis and bandpass peak normalized
         freq, tb: frequency axis and atmospheric spectra
         """
+        if fband is None or band is None:
+            return None
 
         # interpolate bandpass onto Tb's frequency axis
         bandn = np.interp(freq, fband, band)
@@ -1772,43 +1788,52 @@ class merra2Player:
                 % (key, Tsky_merra[key][inear[0]], Tsky_merra[key][inear[1]])
             )
 
-    def save2pickle(self, Tsky_merra, opts):
+    def save2pickle(self, Tsky_merra, opts, flat=False):
         """
         function to save results to pickle file
+        flat should be true when passing in the flat result from runMERRA (the
+        first element of the tuple returned by runMERRA, with a 'flat' key).
         """
         import pickle
 
-        print("Saving results to pickle file...")
+        print(f"Saving {'flat ' if flat else ''}results to pickle file...")
         now = opts['now']
         strnow = now.isoformat()
         bandopt = opts['bandopt']
         siteopt = opts['siteopt']
         dateopt = opts['dateopt']
 
-        keys = ['tstr', 'BK30', 'BK31', 'BK40', 'BK41', 'BK100', 'BK150', 'BK210', 'BK220', 'BK270', 'tipper850']
-        if 'custom' in bandopt['name']:
-            keys.append('custom')
-        keys = keys + ['pwv']
+        if flat:
+            keys = ['tstr', 'flat', 'pwv']
+        else:
+            keys = ['tstr', 'BK30', 'BK31', 'BK40', 'BK41', 'BK100', 'BK150', 'BK210', 'BK220', 'BK270', 'tipper850']
+            if 'custom' in bandopt['name']:
+                keys.append('custom')
+            keys = [k for k in keys if k in Tsky_merra]
+            keys = keys + ['pwv']
 
         if opts['web'] == False:
             self.webDir = self.finalDir
         if dateopt['type'] == 'datelist':
             dateInfo = '%s_%s' % (dateopt['start'], dateopt['end'])
 
-        pickleFile = 'Tsky_merra2_output_%s_%s.pickle' % (siteopt['name'], dateInfo)
+        pickleFile = 'Tsky_merra2_output_%s_%s%s.pickle' % (
+            siteopt['name'], dateInfo, '_flat' if flat else ''
+        )
 
-        print("Saving resuls to %s" % (self.webDir + pickleFile))
+        print(f"Saving {'flat ' if flat else ''}results to {self.webDir + pickleFile}")
         with open(self.webDir + pickleFile, 'wb') as f:
             pickle.dump([Tsky_merra, opts], f)
 
         return pickleFile
 
-    def save2csv(self, Tsky_merra, opts):
+    def save2csv(self, Tsky_merra, opts, flat=False):
         """
         function to save the results to a csv file
-
+        flat should be true when passing in the flat result from runMERRA (the
+        first element of the tuple returned by runMERRA, with a 'flat' key).
         """
-        print("Saving results to csv file...")
+        print(f"Saving {'flat ' if flat else ''}results to csv file...")
         now = opts['now']
         strnow = now.isoformat()
         bandopt = opts['bandopt']
@@ -1818,10 +1843,14 @@ class merra2Player:
         if opts['web'] == False:
             self.webDir = self.finalDir
 
-        keys = ['tstr', 'BK30', 'BK31', 'BK40', 'BK41', 'BK100', 'BK150', 'BK210', 'BK220', 'BK270', 'tipper850']
-        if 'custom' in bandopt['name']:
-            keys.append('custom')
-        keys = keys + ['pwv']
+        if flat:
+            keys = ['tstr', 'flat', 'pwv']
+        else:
+            keys = ['tstr', 'BK30', 'BK31', 'BK40', 'BK41', 'BK100', 'BK150', 'BK210', 'BK220', 'BK270', 'tipper850']
+            if 'custom' in bandopt['name']:
+                keys.append('custom')
+            keys = [k for k in keys if k in Tsky_merra]
+            keys = keys + ['pwv']
 
         fmt = '{:8.3f}, ' * (len(keys) - 1)
         fmt = '{:10}, ' + fmt
@@ -1830,9 +1859,11 @@ class merra2Player:
         if dateopt['type'] == 'datelist':
             dateInfo = '%s_%s' % (dateopt['start'], dateopt['end'])
 
-        csvFile = 'Tsky_merra2_output_%s_%s.csv' % (siteopt['name'], dateInfo)
+        csvFile = 'Tsky_merra2_output_%s_%s%s.csv' % (
+            siteopt['name'], dateInfo, '_flat' if flat else ''
+        )
 
-        print("Saving resuls to %s" % (self.webDir + csvFile))
+        print(f"Saving {'flat ' if flat else ''}resuls to {self.webDir + csvFile}")
         with open(self.webDir + csvFile, 'w') as f:
             f.write('# Output from predict_Tsky.py generated on %s \n' % strnow)
             f.write('# Summary of user inputs \n')
